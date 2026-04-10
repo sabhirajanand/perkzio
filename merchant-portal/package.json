@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node scripts/next-with-dotenv.cjs dev",
+    "dev:turbo": "node scripts/next-with-dotenv.cjs dev --turbopack",
+    "build": "node scripts/next-with-dotenv.cjs build",
+    "start": "node scripts/next-with-dotenv.cjs start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
     "next": "16.2.2",
+    "dotenv": "^16.6.1",
     "next-safe-action": "^8.4.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",

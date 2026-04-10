@@ -3,7 +3,7 @@
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { cn } from '@/lib/utils/cn';
 
-export interface LabelProps extends LabelPrimitive.LabelProps {}
+export type LabelProps = LabelPrimitive.LabelProps;
 
 export default function Label({ className, ...props }: LabelProps) {
   return (

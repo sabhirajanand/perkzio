@@ -16,6 +16,7 @@ const defaultRegisterValues: RegisterApplicationInput = {
   contactName: '',
   contactEmail: '',
   contactPhone: '',
+  otpChallengeId: '00000000-0000-0000-0000-000000000000',
   pan: '',
   outletsCount: 1,
   gstin: '',
@@ -32,6 +33,10 @@ const defaultRegisterValues: RegisterApplicationInput = {
   panCardFileName: '',
   addressProofFileName: '',
   shopPhotoFileName: '',
+  gstCertUploadKey: '',
+  panCardUploadKey: '',
+  addressProofUploadKey: '',
+  shopPhotoUploadKey: '',
   plan: 'GROWTH',
   billingCycle: 'MONTHLY',
 };

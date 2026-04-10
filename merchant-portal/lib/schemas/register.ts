@@ -12,6 +12,7 @@ export const registerApplicationSchema = z.object({
     .min(10)
     .max(15)
     .regex(/^[0-9+ -]+$/, 'Invalid phone number'),
+  otpChallengeId: z.string().uuid(),
   pan: z
     .string()
     .trim()
@@ -41,6 +42,10 @@ export const registerApplicationSchema = z.object({
   panCardFileName: z.string().optional(),
   addressProofFileName: z.string().optional(),
   shopPhotoFileName: z.string().optional(),
+  gstCertUploadKey: z.string().optional(),
+  panCardUploadKey: z.string().optional(),
+  addressProofUploadKey: z.string().optional(),
+  shopPhotoUploadKey: z.string().optional(),
   plan: z.enum(['LITE', 'GROWTH', 'PRO']),
   billingCycle: z.enum(['MONTHLY', 'ANNUAL']).optional(),
 });

@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const optionalNonEmptyString = z.preprocess(
+  (v) => (typeof v === 'string' && v.trim().length === 0 ? undefined : v),
+  z.string().min(1).optional(),
+);
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(8000),
@@ -20,15 +25,36 @@ const envSchema = z.object({
   JWT_ACCESS_TTL_SECONDS: z.coerce.number().default(900),
   JWT_REFRESH_TTL_SECONDS: z.coerce.number().default(604800),
 
+  SUPERADMIN_EMAILS: z
+    .string()
+    .default('')
+    .transform((s) =>
+      s
+        .split(',')
+        .map((v) => v.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+
   CORS_ORIGINS: z
     .string()
-    .default('http://localhost:3001')
+    .default('http://localhost:3000,http://localhost:3001')
     .transform((s) =>
       s
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean),
     ),
+
+  AWS_REGION: optionalNonEmptyString,
+  AWS_ACCESS_KEY_ID: optionalNonEmptyString,
+  AWS_SECRET_ACCESS_KEY: optionalNonEmptyString,
+  KYC_DOCS_BUCKET: optionalNonEmptyString,
+
+  RAZORPAY_KEY_ID: optionalNonEmptyString,
+  RAZORPAY_KEY_SECRET: optionalNonEmptyString,
+  RAZORPAY_WEBHOOK_SECRET: optionalNonEmptyString,
+
+  ENABLE_CRON: z.coerce.boolean().default(false),
 });
 
 export type Env = z.infer<typeof envSchema>;

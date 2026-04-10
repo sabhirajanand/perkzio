@@ -3,7 +3,7 @@
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { cn } from '@/lib/utils/cn';
 
-export interface TabsProps extends TabsPrimitive.TabsProps {}
+export type TabsProps = TabsPrimitive.TabsProps;
 
 export default function Tabs(props: TabsProps) {
   return <TabsPrimitive.Root {...props} />;

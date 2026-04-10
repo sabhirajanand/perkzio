@@ -17,5 +17,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Unable to submit onboarding' }, { status: result.status });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json(result.json, { status: 200 });
 }

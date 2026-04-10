@@ -89,15 +89,69 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
   }
 
   function bindFile(field: (typeof DOC_SLOTS)[number]['name']) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
+    return async (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
       form.setValue(field, f?.name ?? '', { shouldValidate: true });
       if (!f) return;
+
+      const otpChallengeId = form.getValues('otpChallengeId');
+      if (!otpChallengeId || otpChallengeId === '00000000-0000-0000-0000-000000000000') {
+        toast.error('Verify your phone number first');
+        return;
+      }
+
+      const docType =
+        field === 'gstCertFileName'
+          ? 'GST_CERT'
+          : field === 'panCardFileName'
+            ? 'PAN_CARD'
+            : field === 'addressProofFileName'
+              ? 'ADDRESS_PROOF'
+              : 'SHOP_PHOTO';
+      const uploadKeyField =
+        field === 'gstCertFileName'
+          ? 'gstCertUploadKey'
+          : field === 'panCardFileName'
+            ? 'panCardUploadKey'
+            : field === 'addressProofFileName'
+              ? 'addressProofUploadKey'
+              : 'shopPhotoUploadKey';
+
       const id = `${String(field)}:${f.name}`;
-      setUploads((prev) => [{ id, fileName: f.name, progress: 85 }, ...prev.filter((p) => p.id !== id)]);
-      window.setTimeout(() => {
+      setUploads((prev) => [{ id, fileName: f.name, progress: 5 }, ...prev.filter((p) => p.id !== id)]);
+
+      try {
+        setUploads((prev) => prev.map((p) => (p.id === id ? { ...p, progress: 15 } : p)));
+        const presignRes = await fetch('/api/kyc/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            otpChallengeId,
+            documentType: docType,
+            fileName: f.name,
+            contentType: f.type || 'application/octet-stream',
+            sizeBytes: f.size,
+          }),
+        });
+        if (!presignRes.ok) throw new Error('Unable to upload document');
+        const presignBody = (await presignRes.json()) as { uploadUrl?: string; s3Key?: string };
+        if (!presignBody.uploadUrl || !presignBody.s3Key) throw new Error('Unable to upload document');
+
+        setUploads((prev) => prev.map((p) => (p.id === id ? { ...p, progress: 40 } : p)));
+        const putRes = await fetch(presignBody.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': f.type || 'application/octet-stream' },
+          body: f,
+        });
+        if (!putRes.ok) throw new Error('Upload failed');
+
+        form.setValue(uploadKeyField, presignBody.s3Key, { shouldValidate: true });
         setUploads((prev) => prev.map((p) => (p.id === id ? { ...p, progress: 100 } : p)));
-      }, 650);
+        toast.success('Document uploaded');
+      } catch (err) {
+        setUploads((prev) => prev.map((p) => (p.id === id ? { ...p, progress: 0 } : p)));
+        toast.error(err instanceof Error ? err.message : 'Upload failed');
+      }
     };
   }
 

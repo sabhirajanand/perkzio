@@ -12,7 +12,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Backend endpoints will be implemented in services/api next.
   const result = await proxyToBackend({
     method: 'POST',
     path: '/v1/auth/merchant/login',
@@ -23,11 +22,30 @@ export async function POST(req: Request) {
     return jsonError(result.status, 'Invalid credentials');
   }
 
+  const token =
+    result.json && typeof result.json === 'object'
+      ? (result.json as { token?: unknown; session?: unknown; sessionToken?: unknown }).token ??
+        (result.json as { token?: unknown; session?: unknown; sessionToken?: unknown }).sessionToken ??
+        (result.json as { token?: unknown; session?: unknown; sessionToken?: unknown }).session
+      : null;
+
+  if (typeof token !== 'string' || !token) {
+    return jsonError(502, 'Auth service did not return a session token');
+  }
+
   const res = NextResponse.json({ ok: true });
-  // Placeholder cookie until backend returns token/session.
   res.cookies.set({
     name: 'mp_session',
-    value: 'placeholder',
+    value: token,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: parsed.data.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 8,
+  });
+  res.cookies.set({
+    name: 'mp_role',
+    value: parsed.data.role,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

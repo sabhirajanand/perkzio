@@ -13,7 +13,6 @@ export interface ErrorPageProps {
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
     // Intentionally minimal: logs help during early integration.
-    // eslint-disable-next-line no-console
     console.error(error);
   }, [error]);
 

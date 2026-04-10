@@ -6,6 +6,7 @@ import Input from '@/components/ui/input';
 import Label from '@/components/ui/label';
 import RegisterFormCard from '@/components/register/RegisterFormCard';
 import RegisterStepHeader from '@/components/register/RegisterStepHeader';
+import PhoneOtp from '@/components/register/steps/business/PhoneOtp';
 import { cn } from '@/lib/utils/cn';
 import type { RegisterApplicationInput } from '@/lib/schemas/register';
 import { useFormContext } from 'react-hook-form';
@@ -95,6 +96,12 @@ export default function RegisterStepBusiness({ onNext }: RegisterStepBusinessPro
             </Label>
             <Input id="contactPhone" placeholder="+91 00000 00000" {...form.register('contactPhone')} />
             {errorText(form.formState.errors.contactPhone?.message)}
+          </div>
+
+          <div>
+            <Label className="tracking-[0.06em]">OTP Verification</Label>
+            <PhoneOtp />
+            {errorText(form.formState.errors.otpChallengeId?.message)}
           </div>
 
           <div>
