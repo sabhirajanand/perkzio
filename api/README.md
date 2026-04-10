@@ -30,9 +30,9 @@ npm install
 npm run dev
 ```
 
-- Health: `GET http://localhost:3000/health`
-- Readiness: `GET http://localhost:3000/ready` (DB + Redis)
-- API stub: `GET http://localhost:3000/v1`
+- Health: `GET http://localhost:8000/health`
+- Readiness: `GET http://localhost:8000/ready` (DB + Redis)
+- API stub: `GET http://localhost:8000/v1`
 
 ## TypeORM migrations
 
