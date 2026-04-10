@@ -1,0 +1,36 @@
+# ---- OS / editor junk ----
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*.swo
+*.tmp
+*.bak
+*.log
+
+# ---- Local env / secrets ----
+.env
+.env.*
+
+# ---- Docs (keep local, never commit) ----
+docs/
+*.pdf
+*.zip
+
+# ---- Temp / scratch ----
+temp/
+tmp/
+
+# ---- Node / build artifacts (monorepo-wide) ----
+**/node_modules/
+**/dist/
+**/.next/
+**/out/
+**/coverage/
+**/*.tsbuildinfo
+**/.turbo/
+**/.vercel/
+**/.cache/
+

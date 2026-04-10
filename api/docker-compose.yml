@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: abcd123
+      POSTGRES_DB: perkzio
+    ports:
+      - '4012:5432'
+    volumes:
+      - perkzio_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+
+volumes:
+  perkzio_pgdata:

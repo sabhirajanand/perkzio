@@ -1,0 +1,44 @@
+{
+  "name": "@perkzio/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Perkzio HTTP API — Express + TypeORM + PostgreSQL",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint \"src/**/*.ts\"",
+    "migration:run": "npm run build && typeorm migration:run -d dist/config/data-source.js",
+    "migration:revert": "npm run build && typeorm migration:revert -d dist/config/data-source.js",
+    "migration:show": "npm run build && typeorm migration:show -d dist/config/data-source.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.1",
+    "pino": "^9.4.0",
+    "pino-http": "^10.3.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20",
+    "pg": "^8.13.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.9.0",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "eslint": "^9.12.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.8.0"
+  }
+}
