@@ -3,20 +3,30 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import Button from '@/components/ui/button';
 
 export interface DeleteStaffButtonProps {
   staffId: string;
   disabled?: boolean;
+  buttonLabel?: string;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
 }
 
-export default function DeleteStaffButton({ staffId, disabled }: DeleteStaffButtonProps) {
+export default function DeleteStaffButton({
+  staffId,
+  disabled,
+  buttonLabel = 'Delete user',
+  title = 'Delete user?',
+  description = 'This will deactivate the user and remove their role access. They will no longer be able to log in.',
+  confirmLabel = 'Delete user',
+}: DeleteStaffButtonProps) {
+  const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onDelete() {
-    const ok = window.confirm('Deactivate this user? They will no longer be able to log in.');
-    if (!ok) return;
-
     setIsSubmitting(true);
     try {
       const res = await fetch(`/api/platform/staff/${staffId}`, { method: 'DELETE' });
@@ -30,18 +40,31 @@ export default function DeleteStaffButton({ staffId, disabled }: DeleteStaffButt
       toast.error(e instanceof Error ? e.message : 'Unable to delete user');
     } finally {
       setIsSubmitting(false);
+      setOpen(false);
     }
   }
 
   return (
-    <Button
-      variant="outline"
-      className="border-red-200 text-red-700 hover:bg-red-50"
-      onClick={onDelete}
-      disabled={disabled || isSubmitting}
-    >
-      Deactivate user
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        className="border-red-200 text-red-700 hover:bg-red-50"
+        onClick={() => setOpen(true)}
+        disabled={disabled || isSubmitting}
+      >
+        {buttonLabel}
+      </Button>
+      <ConfirmModal
+        open={open}
+        title={title}
+        description={description}
+        confirmLabel={confirmLabel}
+        cancelLabel="Cancel"
+        isSubmitting={isSubmitting}
+        onClose={() => (isSubmitting ? null : setOpen(false))}
+        onConfirm={onDelete}
+      />
+    </>
   );
 }
 

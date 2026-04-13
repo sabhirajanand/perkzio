@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-export async function POST() {
-  const res = NextResponse.json({ ok: true });
+export async function POST(req: Request) {
+  const res = NextResponse.redirect(new URL('/admin/login', req.url), { status: 303 });
   res.cookies.set({
     name: 'ap_session',
     value: '',

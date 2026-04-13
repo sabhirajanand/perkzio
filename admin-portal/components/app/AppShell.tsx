@@ -39,7 +39,12 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'User management',
     items: [
-      { href: '/merchants', label: 'Merchants', visibility: { type: 'superadmin' } },
+      { href: '/merchants', label: 'Merchants', visibility: { type: 'permission', code: AdminPermissions.MERCHANTS_LIST } },
+      {
+        href: '/merchants/registrations',
+        label: 'Merchant registrations',
+        visibility: { type: 'permission', code: AdminPermissions.MERCHANT_APPLICATIONS_LIST },
+      },
       { href: '/customers', label: 'Customers', visibility: { type: 'superadmin' } },
     ],
   },

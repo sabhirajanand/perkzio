@@ -6,7 +6,7 @@ import Input from '@/components/ui/input';
 import Label from '@/components/ui/label';
 import RegisterFormCard from '@/components/register/RegisterFormCard';
 import RegisterStepHeader from '@/components/register/RegisterStepHeader';
-import PhoneOtp from '@/components/register/steps/business/PhoneOtp';
+import EmailOtp from '@/components/register/steps/business/EmailOtp';
 import { cn } from '@/lib/utils/cn';
 import type { RegisterApplicationInput } from '@/lib/schemas/register';
 import { useFormContext } from 'react-hook-form';
@@ -91,17 +91,27 @@ export default function RegisterStepBusiness({ onNext }: RegisterStepBusinessPro
           </div>
 
           <div>
+            <Label htmlFor="pan" className="tracking-[0.06em]">
+              PAN No
+            </Label>
+            <Input id="pan" placeholder="ABCDE1234F" {...form.register('pan')} />
+            {errorText(form.formState.errors.pan?.message)}
+          </div>
+
+          <div>
+            <Label htmlFor="gstin" className="tracking-[0.06em]">
+              GSTIN
+            </Label>
+            <Input id="gstin" placeholder="22AAAAA0000A1Z5" {...form.register('gstin')} />
+            {errorText(form.formState.errors.gstin?.message)}
+          </div>
+
+          <div>
             <Label htmlFor="contactPhone" className="tracking-[0.06em]">
               Mobile Number
             </Label>
             <Input id="contactPhone" placeholder="+91 00000 00000" {...form.register('contactPhone')} />
             {errorText(form.formState.errors.contactPhone?.message)}
-          </div>
-
-          <div>
-            <Label className="tracking-[0.06em]">OTP Verification</Label>
-            <PhoneOtp />
-            {errorText(form.formState.errors.otpChallengeId?.message)}
           </div>
 
           <div>
@@ -119,19 +129,25 @@ export default function RegisterStepBusiness({ onNext }: RegisterStepBusinessPro
           </div>
 
           <div>
-            <Label htmlFor="pan" className="tracking-[0.06em]">
-              PAN No
+            <Label htmlFor="password" className="tracking-[0.06em]">
+              Password
             </Label>
-            <Input id="pan" placeholder="ABCDE1234F" {...form.register('pan')} />
-            {errorText(form.formState.errors.pan?.message)}
+            <Input id="password" type="password" autoComplete="new-password" {...form.register('password')} />
+            {errorText(form.formState.errors.password?.message)}
           </div>
 
           <div>
-            <Label htmlFor="gstin" className="tracking-[0.06em]">
-              GSTIN
+            <Label className="tracking-[0.06em]">Email Verification</Label>
+            <EmailOtp />
+            {errorText(form.formState.errors.emailOtpChallengeId?.message)}
+          </div>
+
+          <div>
+            <Label htmlFor="confirmPassword" className="tracking-[0.06em]">
+              Confirm Password
             </Label>
-            <Input id="gstin" placeholder="22AAAAA0000A1Z5" {...form.register('gstin')} />
-            {errorText(form.formState.errors.gstin?.message)}
+            <Input id="confirmPassword" type="password" autoComplete="new-password" {...form.register('confirmPassword')} />
+            {errorText(form.formState.errors.confirmPassword?.message)}
           </div>
 
           <div className="md:col-span-2">

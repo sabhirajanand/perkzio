@@ -94,12 +94,6 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
       form.setValue(field, f?.name ?? '', { shouldValidate: true });
       if (!f) return;
 
-      const otpChallengeId = form.getValues('otpChallengeId');
-      if (!otpChallengeId || otpChallengeId === '00000000-0000-0000-0000-000000000000') {
-        toast.error('Verify your phone number first');
-        return;
-      }
-
       const docType =
         field === 'gstCertFileName'
           ? 'GST_CERT'
@@ -126,7 +120,7 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            otpChallengeId,
+            otpChallengeId: '00000000-0000-0000-0000-000000000000',
             documentType: docType,
             fileName: f.name,
             contentType: f.type || 'application/octet-stream',
@@ -352,13 +346,6 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
           Back to Business Info
         </button>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            onClick={continueLocation}
-            className="h-14 rounded-full bg-[#323534] px-10 text-base font-bold text-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.35)] hover:brightness-95"
-          >
-            Skip for Now
-          </button>
           <Button
             type="button"
             size="lg"

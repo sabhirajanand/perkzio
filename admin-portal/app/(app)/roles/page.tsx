@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
+import DeleteRoleButton from '@/components/roles/DeleteRoleButton';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
 import { listRoles } from '@/lib/platform/platformServer';
@@ -11,6 +12,9 @@ export default async function RolesPage() {
   const session = await readServerSession();
   const roles = await listRoles();
   const canCreate = hasPermission(session, AdminPermissions.ROLES_CREATE);
+  const canView = hasPermission(session, AdminPermissions.ROLES_VIEW);
+  const canEdit = hasPermission(session, AdminPermissions.ROLES_EDIT);
+  const canDelete = hasPermission(session, AdminPermissions.ROLES_DELETE);
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -40,11 +44,19 @@ export default async function RolesPage() {
                   <p className="text-sm font-semibold text-zinc-900">{r.name}</p>
                   {r.description ? <p className="mt-1 text-sm text-zinc-600">{r.description}</p> : null}
                 </div>
-                <Link href={`/roles/${r.id}`}>
-                  <Button variant="secondary" size="sm">
-                    View
-                  </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link href={`/roles/${r.id}`}>
+                    <Button variant="secondary" size="sm" disabled={!canView} title={!canView ? "You don't have permission to view roles" : undefined}>
+                      View
+                    </Button>
+                  </Link>
+                  <Link href={`/roles/${r.id}/edit`}>
+                    <Button variant="outline" size="sm" disabled={!canEdit} title={!canEdit ? "You don't have permission to edit roles" : undefined}>
+                      Edit
+                    </Button>
+                  </Link>
+                  <DeleteRoleButton roleId={r.id} disabled={!canDelete} />
+                </div>
               </div>
             ))
           )}

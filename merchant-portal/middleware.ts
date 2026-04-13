@@ -1,7 +1,19 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const PROTECTED_PREFIXES = ['/dashboard'];
+const PROTECTED_PREFIXES = [
+  '/dashboard',
+  '/customers',
+  '/offers',
+  '/loyalty-cards',
+  '/campaigns',
+  '/analytics',
+  '/reports',
+  '/history',
+  '/settings',
+  '/tickets',
+  '/billing',
+];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -18,6 +30,18 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/customers/:path*',
+    '/offers/:path*',
+    '/loyalty-cards/:path*',
+    '/campaigns/:path*',
+    '/analytics/:path*',
+    '/reports/:path*',
+    '/history/:path*',
+    '/settings/:path*',
+    '/tickets/:path*',
+    '/billing/:path*',
+  ],
 };
 

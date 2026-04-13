@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import Button from '@/components/ui/button';
 
 export interface DeleteRoleButtonProps {
@@ -11,12 +12,10 @@ export interface DeleteRoleButtonProps {
 }
 
 export default function DeleteRoleButton({ roleId, disabled }: DeleteRoleButtonProps) {
+  const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onDelete() {
-    const ok = window.confirm('Delete this role? This cannot be undone.');
-    if (!ok) return;
-
     setIsSubmitting(true);
     try {
       const res = await fetch(`/api/platform/roles/${roleId}`, { method: 'DELETE' });
@@ -30,18 +29,31 @@ export default function DeleteRoleButton({ roleId, disabled }: DeleteRoleButtonP
       toast.error(e instanceof Error ? e.message : 'Unable to delete role');
     } finally {
       setIsSubmitting(false);
+      setOpen(false);
     }
   }
 
   return (
-    <Button
-      variant="outline"
-      className="border-red-200 text-red-700 hover:bg-red-50"
-      onClick={onDelete}
-      disabled={disabled || isSubmitting}
-    >
-      Delete role
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        className="border-red-200 text-red-700 hover:bg-red-50"
+        onClick={() => setOpen(true)}
+        disabled={disabled || isSubmitting}
+      >
+        Delete role
+      </Button>
+      <ConfirmModal
+        open={open}
+        title="Delete role?"
+        description="This will permanently delete the role. Staff users currently assigned to this role may lose access."
+        confirmLabel="Delete role"
+        cancelLabel="Cancel"
+        isSubmitting={isSubmitting}
+        onClose={() => (isSubmitting ? null : setOpen(false))}
+        onConfirm={onDelete}
+      />
+    </>
   );
 }
 

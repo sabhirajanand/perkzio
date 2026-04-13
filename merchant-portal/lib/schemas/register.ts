@@ -12,7 +12,12 @@ export const registerApplicationSchema = z.object({
     .min(10)
     .max(15)
     .regex(/^[0-9+ -]+$/, 'Invalid phone number'),
-  otpChallengeId: z.string().uuid(),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(8, 'Confirm password must be at least 8 characters'),
+  emailOtpChallengeId: z
+    .string()
+    .uuid()
+    .refine((v) => v !== '00000000-0000-0000-0000-000000000000', 'Email verification required'),
   pan: z
     .string()
     .trim()
@@ -48,6 +53,10 @@ export const registerApplicationSchema = z.object({
   shopPhotoUploadKey: z.string().optional(),
   plan: z.enum(['LITE', 'GROWTH', 'PRO']),
   billingCycle: z.enum(['MONTHLY', 'ANNUAL']).optional(),
+}).superRefine((v, ctx) => {
+  if (v.password !== v.confirmPassword) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Passwords do not match', path: ['confirmPassword'] });
+  }
 });
 
 export type RegisterApplicationInput = z.infer<typeof registerApplicationSchema>;

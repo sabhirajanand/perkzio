@@ -30,6 +30,10 @@ export async function merchantLogin(req: Request, res: Response): Promise<void> 
     throw new AppError(401, ErrorCodes.UNAUTHORIZED, 'Invalid credentials');
   }
 
+  if (user.status !== 'ACTIVE' || user.merchant.status !== 'ACTIVE') {
+    throw new AppError(403, ErrorCodes.FORBIDDEN, 'Account is not active');
+  }
+
   const ok = await verifyPassword({ password: parsed.data.password, passwordHash: user.passwordHash });
   if (!ok) {
     throw new AppError(401, ErrorCodes.UNAUTHORIZED, 'Invalid credentials');

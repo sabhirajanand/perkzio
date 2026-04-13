@@ -11,6 +11,8 @@ import { SubscriptionPlan } from '../../../../entities/SubscriptionPlan.js';
 import { AppError } from '../../../../errors/AppError.js';
 import { ErrorCodes } from '../../../../errors/codes.js';
 import { getRazorpayClient, getRazorpayKeyId } from '../../../../lib/payments/razorpay.js';
+import { sendEmail } from '../../../../lib/notifications/email.js';
+import { hashPassword } from '../../../../lib/auth/password.js';
 
 const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
@@ -20,6 +22,7 @@ const registerApplicationSchema = z.object({
   contactName: z.string().min(2),
   contactEmail: z.string().email(),
   contactPhone: z.string().min(10).max(15),
+  password: z.string().min(8),
   pan: z
     .string()
     .trim()
@@ -50,7 +53,7 @@ const registerApplicationSchema = z.object({
   shopPhotoUploadKey: z.string().optional(),
   plan: z.enum(['LITE', 'GROWTH', 'PRO']),
   billingCycle: z.enum(['MONTHLY', 'ANNUAL']).optional(),
-  otpChallengeId: z.string().uuid(),
+  emailOtpChallengeId: z.string().uuid(),
 });
 
 function createReferenceNumber(): string {
@@ -73,9 +76,9 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
 
   const ds = getDataSource();
   const otpRepo = ds.getRepository(OtpChallenge);
-  const otp = await otpRepo.findOne({ where: { id: parsed.data.otpChallengeId } });
-  if (!otp || !otp.consumedAt || !otp.expiresAt || otp.expiresAt.getTime() < Date.now()) {
-    throw new AppError(401, ErrorCodes.UNAUTHENTICATED, 'Phone verification required');
+  const emailOtp = await otpRepo.findOne({ where: { id: parsed.data.emailOtpChallengeId } });
+  if (!emailOtp || !emailOtp.consumedAt || !emailOtp.expiresAt || emailOtp.expiresAt.getTime() < Date.now()) {
+    throw new AppError(401, ErrorCodes.UNAUTHENTICATED, 'Email verification required');
   }
 
   const planRepo = ds.getRepository(SubscriptionPlan);
@@ -85,18 +88,39 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
   }
 
   const appRepo = ds.getRepository(MerchantOnboardingApplication);
-  const { otpChallengeId: _otpChallengeId, ...businessPayload } = parsed.data;
-  void _otpChallengeId;
+  const passwordHash = await hashPassword({ password: parsed.data.password });
+  const {
+    emailOtpChallengeId: _emailOtpChallengeId,
+    password: _password,
+    ...businessPayload
+  } = parsed.data;
+  void _emailOtpChallengeId;
+  void _password;
   const application = appRepo.create({
     referenceNumber: createReferenceNumber(),
     status: parsed.data.plan === 'LITE' ? 'PAYMENT_PENDING' : 'SUBMITTED',
-    businessPayload,
+    businessPayload: { ...businessPayload, passwordHash },
     selectedPlan,
   });
 
   await appRepo.save(application);
 
   const env = loadEnv();
+  if (parsed.data.contactEmail) {
+    await sendEmail({
+      to: [parsed.data.contactEmail.toLowerCase()],
+      subject: `Perkzio: Application received (${application.referenceNumber})`,
+      text: `We’ve received your merchant registration application.\n\nReference: ${application.referenceNumber}\nStatus: ${application.status}\n\nOur team will review it and get back to you.`,
+    });
+  }
+  if (env.ADMIN_NOTIFICATION_EMAILS.length > 0) {
+    await sendEmail({
+      to: env.ADMIN_NOTIFICATION_EMAILS,
+      subject: `New merchant application: ${application.referenceNumber}`,
+      text: `A new merchant registration application has been submitted.\n\nReference: ${application.referenceNumber}\nPlan: ${parsed.data.plan}\nBusiness: ${parsed.data.businessName}\nEmail: ${parsed.data.contactEmail.toLowerCase()}\nPhone: ${parsed.data.contactPhone}`,
+    });
+  }
+
   const kycRepo = ds.getRepository(MerchantKycDocument);
   const possibleUploads: Array<{ documentType: string; s3Key: string | undefined }> = [
     { documentType: 'GST_CERT', s3Key: parsed.data.gstCertUploadKey ?? parsed.data.gstCertFileName },

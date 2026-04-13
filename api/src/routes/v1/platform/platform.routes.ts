@@ -3,6 +3,14 @@ import type { Express } from 'express';
 import { AdminPermissions } from '../../../constants/permissions.js';
 import { adminLogin, adminMe } from '../../../controllers/v1/platform/auth/adminAuth.controller.js';
 import {
+  approveMerchantApplication,
+  getMerchantApplication,
+  listMerchantApplications,
+  rejectMerchantApplication,
+  updateMerchantApplication,
+} from '../../../controllers/v1/platform/merchantApplications/platformMerchantApplications.controller.js';
+import { deleteMerchant, getMerchant, listMerchants, updateMerchant } from '../../../controllers/v1/platform/merchants/platformMerchants.controller.js';
+import {
   createRole,
   deleteRole,
   getRole,
@@ -39,5 +47,61 @@ export function registerPlatformRoutes(app: Express): void {
   app.get('/v1/platform/staff/:staffId', adminAuthMiddleware, requireAdminPermission(AdminPermissions.ADMIN_USERS_VIEW), asyncHandler(getStaff));
   app.patch('/v1/platform/staff/:staffId', adminAuthMiddleware, requireAdminPermission(AdminPermissions.ADMIN_USERS_EDIT), asyncHandler(updateStaff));
   app.delete('/v1/platform/staff/:staffId', adminAuthMiddleware, requireAdminPermission(AdminPermissions.ADMIN_USERS_DELETE), asyncHandler(deleteStaff));
+
+  app.get(
+    '/v1/platform/merchant-applications',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANT_APPLICATIONS_LIST),
+    asyncHandler(listMerchantApplications),
+  );
+  app.get(
+    '/v1/platform/merchant-applications/:applicationId',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANT_APPLICATIONS_VIEW),
+    asyncHandler(getMerchantApplication),
+  );
+  app.patch(
+    '/v1/platform/merchant-applications/:applicationId',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANT_APPLICATIONS_EDIT),
+    asyncHandler(updateMerchantApplication),
+  );
+  app.post(
+    '/v1/platform/merchant-applications/:applicationId/approve',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANT_APPLICATIONS_REVIEW),
+    asyncHandler(approveMerchantApplication),
+  );
+  app.post(
+    '/v1/platform/merchant-applications/:applicationId/reject',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANT_APPLICATIONS_REVIEW),
+    asyncHandler(rejectMerchantApplication),
+  );
+
+  app.get(
+    '/v1/platform/merchants',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_LIST),
+    asyncHandler(listMerchants),
+  );
+  app.get(
+    '/v1/platform/merchants/:merchantId',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_VIEW),
+    asyncHandler(getMerchant),
+  );
+  app.patch(
+    '/v1/platform/merchants/:merchantId',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_EDIT),
+    asyncHandler(updateMerchant),
+  );
+  app.delete(
+    '/v1/platform/merchants/:merchantId',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_DELETE),
+    asyncHandler(deleteMerchant),
+  );
 }
 

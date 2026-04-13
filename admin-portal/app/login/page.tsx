@@ -1,5 +1,4 @@
-import AdminLoginForm from '@/components/auth/AdminLoginForm';
-import AdminLoginShell from '@/components/auth/AdminLoginShell';
+import { redirect } from 'next/navigation';
 
 export default async function LoginPage({
   searchParams,
@@ -7,14 +6,7 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const sp = await searchParams;
-  const nextPath = typeof sp.next === 'string' && sp.next.length > 0 ? sp.next : '/dashboard';
-  return (
-    <AdminLoginShell
-      title="Admin Login"
-      subtitle={' '}
-    >
-      <AdminLoginForm nextPath={nextPath} />
-    </AdminLoginShell>
-  );
+  const next = typeof sp.next === 'string' && sp.next.length > 0 ? sp.next : '/dashboard';
+  redirect(`/admin/login?next=${encodeURIComponent(next)}`);
 }
 

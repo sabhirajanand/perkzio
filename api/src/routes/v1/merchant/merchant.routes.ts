@@ -1,9 +1,13 @@
 import type { Express } from 'express';
 
 import { merchantLogin, merchantLogout } from '../../../controllers/v1/merchant/auth/merchantAuth.controller.js';
+import { getDashboardSummary } from '../../../controllers/v1/merchant/dashboard/merchantDashboard.controller.js';
+import { getCustomer, listCustomers } from '../../../controllers/v1/merchant/customers/merchantCustomers.controller.js';
+import { createOffer, getOffer, listOffers, updateOffer } from '../../../controllers/v1/merchant/offers/merchantOffers.controller.js';
 import { presignKycUpload } from '../../../controllers/v1/merchant/kyc/merchantKycUpload.controller.js';
 import { submitMerchantOnboardingApplication } from '../../../controllers/v1/merchant/onboarding/merchantOnboarding.controller.js';
 import { sendOtp, verifyOtp } from '../../../controllers/v1/merchant/otp/merchantOtp.controller.js';
+import { merchantAuthMiddleware } from '../../../middleware/merchantAuth.js';
 import { asyncHandler } from '../../../lib/http/asyncHandler.js';
 import { confirmOnboardingPayment } from '../../../controllers/v1/merchant/payments/onboardingPayments.controller.js';
 
@@ -15,5 +19,13 @@ export function registerMerchantRoutes(app: Express): void {
   app.post('/v1/kyc/presign', asyncHandler(presignKycUpload));
   app.post('/v1/onboarding/application', asyncHandler(submitMerchantOnboardingApplication));
   app.post('/v1/onboarding/payment/confirm', asyncHandler(confirmOnboardingPayment));
+
+  app.get('/v1/merchant/dashboard/summary', merchantAuthMiddleware, asyncHandler(getDashboardSummary));
+  app.get('/v1/merchant/customers', merchantAuthMiddleware, asyncHandler(listCustomers));
+  app.get('/v1/merchant/customers/:customerId', merchantAuthMiddleware, asyncHandler(getCustomer));
+  app.get('/v1/merchant/offers', merchantAuthMiddleware, asyncHandler(listOffers));
+  app.post('/v1/merchant/offers', merchantAuthMiddleware, asyncHandler(createOffer));
+  app.get('/v1/merchant/offers/:offerId', merchantAuthMiddleware, asyncHandler(getOffer));
+  app.patch('/v1/merchant/offers/:offerId', merchantAuthMiddleware, asyncHandler(updateOffer));
 }
 

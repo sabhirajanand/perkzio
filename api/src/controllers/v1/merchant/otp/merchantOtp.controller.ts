@@ -7,6 +7,7 @@ import { OtpChallenge } from '../../../../entities/OtpChallenge.js';
 import { AppError } from '../../../../errors/AppError.js';
 import { ErrorCodes } from '../../../../errors/codes.js';
 import { hashPassword, verifyPassword } from '../../../../lib/auth/password.js';
+import { sendEmail } from '../../../../lib/notifications/email.js';
 
 const env = loadEnv();
 
@@ -20,10 +21,17 @@ function normalizePhoneE164(input: string): string {
   return `+${digits}`;
 }
 
-const sendOtpSchema = z.object({
-  phone: z.string().min(6),
-  purpose: z.string().min(1).default('ONBOARDING'),
-});
+const sendOtpSchema = z
+  .object({
+    channel: z.enum(['PHONE', 'EMAIL']).default('PHONE'),
+    phone: z.string().min(6).optional(),
+    email: z.string().email().optional(),
+    purpose: z.string().min(1).default('ONBOARDING'),
+  })
+  .superRefine((v, ctx) => {
+    if (v.channel === 'PHONE' && !v.phone) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Phone is required', path: ['phone'] });
+    if (v.channel === 'EMAIL' && !v.email) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Email is required', path: ['email'] });
+  });
 
 export async function sendOtp(req: Request, res: Response): Promise<void> {
   const parsed = sendOtpSchema.safeParse(req.body);
@@ -31,25 +39,49 @@ export async function sendOtp(req: Request, res: Response): Promise<void> {
     throw new AppError(422, ErrorCodes.VALIDATION_ERROR, 'Invalid request', parsed.error.flatten());
   }
 
-  const phoneE164 = normalizePhoneE164(parsed.data.phone);
-  if (!phoneE164 || phoneE164.length < 8) {
-    throw new AppError(422, ErrorCodes.VALIDATION_ERROR, 'Invalid phone number');
+  const phoneE164 =
+    parsed.data.channel === 'PHONE'
+      ? normalizePhoneE164(parsed.data.phone ?? '')
+      : '';
+  const email = parsed.data.channel === 'EMAIL' ? (parsed.data.email ?? '').trim().toLowerCase() : null;
+  if (parsed.data.channel === 'PHONE') {
+    if (!phoneE164 || phoneE164.length < 8) {
+      throw new AppError(422, ErrorCodes.VALIDATION_ERROR, 'Invalid phone number');
+    }
+  }
+  if (parsed.data.channel === 'EMAIL') {
+    if (!email) {
+      throw new AppError(422, ErrorCodes.VALIDATION_ERROR, 'Invalid email');
+    }
   }
 
-  const code = String(randomInt(100000, 1000000));
+  const fixed =
+    env.NODE_ENV !== 'production'
+      ? (process.env.OTP_FIXED_CODE?.trim() || '123456')
+      : null;
+  const code = fixed ?? String(randomInt(100000, 1000000));
   const codeHash = await hashPassword({ password: code });
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   const repo = getDataSource().getRepository(OtpChallenge);
   const challenge = await repo.save(
     repo.create({
-      phoneE164,
+      phoneE164: parsed.data.channel === 'PHONE' ? phoneE164 : '',
+      email: parsed.data.channel === 'EMAIL' ? email : null,
       purpose: parsed.data.purpose,
       codeHash,
       expiresAt,
       consumedAt: null,
     }),
   );
+
+  if (parsed.data.channel === 'EMAIL' && email) {
+    await sendEmail({
+      to: [email],
+      subject: 'Perkzio: Email verification code',
+      text: `Your verification code is ${code}. It expires in 5 minutes.`,
+    });
+  }
 
   res.json({
     ok: true,

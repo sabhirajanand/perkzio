@@ -12,7 +12,7 @@ export function middleware(req: NextRequest) {
   if (hasSession) return NextResponse.next();
 
   const url = req.nextUrl.clone();
-  url.pathname = '/login';
+  url.pathname = '/admin/login';
   url.searchParams.set('next', pathname);
   return NextResponse.redirect(url);
 }

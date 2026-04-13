@@ -14,7 +14,11 @@ export async function POST(req: Request) {
   });
 
   if (!result.ok) {
-    return NextResponse.json({ message: 'Unable to submit onboarding' }, { status: result.status });
+    const message =
+      result.json && typeof result.json === 'object'
+        ? ((result.json as { message?: unknown }).message ?? 'Unable to submit onboarding')
+        : 'Unable to submit onboarding';
+    return NextResponse.json({ message }, { status: result.status });
   }
 
   return NextResponse.json(result.json, { status: 200 });

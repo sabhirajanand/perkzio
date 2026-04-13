@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
+import DeleteStaffButton from '@/components/staff/DeleteStaffButton';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
 import { listRoles, listStaff } from '@/lib/platform/platformServer';
@@ -12,6 +13,9 @@ export default async function StaffPage() {
   const [staff, roles] = await Promise.all([listStaff(), listRoles()]);
   const canCreateUser = hasPermission(session, AdminPermissions.ADMIN_USERS_CREATE);
   const canCreateRole = hasPermission(session, AdminPermissions.ROLES_CREATE);
+  const canView = hasPermission(session, AdminPermissions.ADMIN_USERS_VIEW);
+  const canEdit = hasPermission(session, AdminPermissions.ADMIN_USERS_EDIT);
+  const canDelete = hasPermission(session, AdminPermissions.ADMIN_USERS_DELETE);
 
   return (
     <div className="space-y-6">
@@ -61,11 +65,19 @@ export default async function StaffPage() {
                   <p className="text-sm font-semibold text-zinc-900">{u.fullName || u.email}</p>
                   <p className="mt-1 text-sm text-zinc-600">{u.email}</p>
                 </div>
-                <Link href={`/staff/${u.id}`}>
-                  <Button variant="secondary" size="sm">
-                    View
-                  </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link href={`/staff/${u.id}`}>
+                    <Button variant="secondary" size="sm" disabled={!canView} title={!canView ? "You don't have permission to view users" : undefined}>
+                      View
+                    </Button>
+                  </Link>
+                  <Link href={`/staff/${u.id}/edit`}>
+                    <Button variant="outline" size="sm" disabled={!canEdit} title={!canEdit ? "You don't have permission to edit users" : undefined}>
+                      Edit
+                    </Button>
+                  </Link>
+                  <DeleteStaffButton staffId={u.id} disabled={!canDelete} />
+                </div>
               </div>
             ))
           )}

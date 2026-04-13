@@ -84,3 +84,69 @@ export async function getStaff(staffId: string): Promise<StaffDetailDto | null> 
   return { staff: json.staff as PlatformStaffDto, roleId: typeof json.roleId === 'string' ? json.roleId : null };
 }
 
+export interface MerchantApplicationSummaryDto {
+  id: string;
+  referenceNumber: string;
+  status: string;
+  createdAt: string;
+  businessName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  plan: string | null;
+  outletsCount: number | null;
+}
+
+export async function listMerchantApplications(status?: string): Promise<MerchantApplicationSummaryDto[]> {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+  const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchant-applications${qs}` });
+  const json = result.ok ? (result.json as { applications?: unknown }).applications : null;
+  return Array.isArray(json) ? (json as MerchantApplicationSummaryDto[]) : [];
+}
+
+export async function getMerchantApplication(applicationId: string): Promise<unknown | null> {
+  const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchant-applications/${applicationId}` });
+  if (!result.ok) return null;
+  return result.json ?? null;
+}
+
+export interface MerchantDto {
+  id: string;
+  legalName: string;
+  status: string;
+  kycStatus: string;
+  primaryBusinessEmail: string | null;
+  createdAt: string;
+}
+
+export async function listMerchants(q?: string): Promise<MerchantDto[]> {
+  const qs = q ? `?q=${encodeURIComponent(q)}` : '';
+  const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchants${qs}` });
+  const json = result.ok ? (result.json as { merchants?: unknown }).merchants : null;
+  return Array.isArray(json) ? (json as MerchantDto[]) : [];
+}
+
+export interface MerchantDetailDto {
+  merchant: {
+    id: string;
+    legalName: string;
+    tradingName: string | null;
+    status: string;
+    kycStatus: string;
+    subscriptionLimitedMode: boolean;
+    primaryBusinessEmail: string | null;
+    pan: string | null;
+    gstin: string | null;
+    registeredAddress: unknown;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export async function getMerchant(merchantId: string): Promise<MerchantDetailDto | null> {
+  const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchants/${merchantId}` });
+  if (!result.ok || !result.json || typeof result.json !== 'object') return null;
+  const json = result.json as { merchant?: unknown };
+  if (!json.merchant || typeof json.merchant !== 'object') return null;
+  return { merchant: json.merchant as MerchantDetailDto['merchant'] };
+}
+

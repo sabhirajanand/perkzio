@@ -54,6 +54,23 @@ const envSchema = z.object({
   RAZORPAY_KEY_SECRET: optionalNonEmptyString,
   RAZORPAY_WEBHOOK_SECRET: optionalNonEmptyString,
 
+  SMTP_HOST: optionalNonEmptyString,
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_USER: optionalNonEmptyString,
+  SMTP_PASS: optionalNonEmptyString,
+  SMTP_FROM: optionalNonEmptyString,
+  ADMIN_NOTIFICATION_EMAILS: z
+    .string()
+    .default('')
+    .transform((s) =>
+      s
+        .split(',')
+        .map((v) => v.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+
+  MERCHANT_ONBOARDING_DEFAULT_PASSWORD: optionalNonEmptyString,
+
   ENABLE_CRON: z.coerce.boolean().default(false),
 });
 

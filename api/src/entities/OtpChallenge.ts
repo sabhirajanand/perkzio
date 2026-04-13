@@ -2,12 +2,16 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 
 
 @Entity({ name: 'otp_challenges' })
 @Index(['phoneE164', 'purpose'])
+@Index(['email', 'purpose'])
 export class OtpChallenge {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ name: 'phone_e164', type: 'varchar', length: 32 })
   phoneE164!: string;
+
+  @Column({ name: 'email', type: 'citext', nullable: true })
+  email!: string | null;
 
   @Column({ type: 'varchar', length: 64 })
   purpose!: string;

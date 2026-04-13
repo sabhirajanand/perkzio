@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from 'react';
+import { forwardRef } from 'react';
 
 import { cn } from '@/lib/utils/cn';
 
@@ -7,15 +8,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export default function Button({
-  className,
-  variant = 'primary',
-  size = 'md',
-  type = 'button',
-  ...props
-}: ButtonProps) {
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { className, variant = 'primary', size = 'md', type = 'button', ...props },
+  ref,
+) {
   return (
     <button
+      ref={ref}
       type={type}
       className={cn(
         'inline-flex items-center justify-center rounded-full font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50',
@@ -25,13 +24,14 @@ export default function Button({
         variant === 'primary' &&
           'bg-primary text-white shadow-[0_10px_40px_-10px_rgba(241,30,105,0.40)] hover:brightness-95',
         variant === 'secondary' && 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200',
-        variant === 'outline' &&
-          'border border-black/10 bg-white text-zinc-900 hover:bg-zinc-50',
+        variant === 'outline' && 'border border-black/10 bg-white text-zinc-900 hover:bg-zinc-50',
         variant === 'ghost' && 'bg-transparent text-zinc-900 hover:bg-zinc-100',
         className,
       )}
       {...props}
     />
   );
-}
+});
+
+export default Button;
 

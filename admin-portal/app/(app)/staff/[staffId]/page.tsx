@@ -1,6 +1,7 @@
+import Link from 'next/link';
+
+import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
-import DeleteStaffButton from '@/components/staff/DeleteStaffButton';
-import EditStaffForm from '@/components/staff/EditStaffForm';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
 import { getStaff, listRoles } from '@/lib/platform/platformServer';
@@ -10,7 +11,7 @@ export default async function StaffDetailPage({ params }: { params: Promise<{ st
   const { staffId } = await params;
   const session = await readServerSession();
   const [detail, roles] = await Promise.all([getStaff(staffId), listRoles()]);
-  const canDelete = hasPermission(session, AdminPermissions.ADMIN_USERS_DELETE);
+  const canEdit = hasPermission(session, AdminPermissions.ADMIN_USERS_EDIT);
 
   if (!detail) {
     return (
@@ -20,6 +21,8 @@ export default async function StaffDetailPage({ params }: { params: Promise<{ st
     );
   }
 
+  const roleName = roles.find((r) => r.id === detail.roleId)?.name ?? '—';
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -27,13 +30,41 @@ export default async function StaffDetailPage({ params }: { params: Promise<{ st
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
             {detail.staff.fullName || detail.staff.email}
           </h1>
-          <p className="mt-2 text-sm text-zinc-600">Update profile, status and role assignment.</p>
+          <p className="mt-2 text-sm text-zinc-600">User details and current role assignment.</p>
         </div>
-        <DeleteStaffButton staffId={staffId} disabled={!canDelete} />
+        <div className="flex items-center gap-2">
+          <Link href={`/staff/${staffId}/edit`}>
+            <Button variant="outline" disabled={!canEdit} title={!canEdit ? "You don't have permission to edit users" : undefined}>
+              Edit
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card className="rounded-[32px] p-6">
-        <EditStaffForm staffId={staffId} initial={detail} roles={roles} />
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">Email</p>
+              <p className="mt-1 text-sm text-zinc-700">{detail.staff.email}</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">Full name</p>
+              <p className="mt-1 text-sm text-zinc-700">{detail.staff.fullName ?? '—'}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">Status</p>
+              <p className="mt-1 text-sm text-zinc-700">{detail.staff.status}</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">Role</p>
+              <p className="mt-1 text-sm text-zinc-700">{roleName}</p>
+            </div>
+          </div>
+        </div>
       </Card>
     </div>
   );

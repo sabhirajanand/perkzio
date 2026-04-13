@@ -1,13 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { toast } from 'sonner';
 import RegisterFormCard from '@/components/register/RegisterFormCard';
 import RegisterStepHeader from '@/components/register/RegisterStepHeader';
-import CustomMerchantCardDesign from '@/components/register/steps/plan/CustomMerchantCardDesign';
-import OrderSummaryCard from '@/components/register/steps/plan/OrderSummaryCard';
-import PaymentSection from '@/components/register/steps/plan/PaymentSection';
 import PlanOptionCard from '@/components/register/steps/plan/PlanOptionCard';
 import { pricing } from '@/lib/pricing';
 import type { RegisterApplicationInput } from '@/lib/schemas/register';
@@ -17,10 +14,6 @@ function parseInrAmount(value: string): number | null {
   if (!m) return null;
   const n = Number(m[1].replace(/,/g, ''));
   return Number.isFinite(n) ? n : null;
-}
-
-function formatInr(amount: number): string {
-  return `₹${amount.toFixed(2)}`;
 }
 
 declare global {
@@ -58,11 +51,9 @@ export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPl
   const { watch, setValue, getValues, trigger } = useFormContext<RegisterApplicationInput>();
   const plan = watch('plan');
   const billingCycle = watch('billingCycle') || 'MONTHLY';
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const planCards = useMemo(() => pricing.plans, []);
   const activePlan = useMemo(() => planCards.find((p) => p.code === plan) ?? planCards[0], [plan, planCards]);
-  const isGrowthTrial = activePlan.code === 'GROWTH';
 
   const baseAmount = useMemo(() => {
     if (billingCycle === 'ANNUAL') {
@@ -72,12 +63,11 @@ export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPl
   }, [activePlan, billingCycle]);
 
   const gstAmount = useMemo(() => (baseAmount == null ? null : baseAmount * 0.18), [baseAmount]);
-  const totalAmount = useMemo(() => (baseAmount == null || gstAmount == null ? null : baseAmount + gstAmount), [baseAmount, gstAmount]);
+  void gstAmount;
 
   async function submit() {
     const valid = await trigger();
     if (!valid) return;
-    setIsSubmitting(true);
     try {
       const payload = getValues();
       const res = await fetch('/api/onboarding/application', {
@@ -142,7 +132,6 @@ export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPl
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Submission failed');
     } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -176,38 +165,6 @@ export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPl
           ))}
         </div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[13fr_7fr] lg:items-start">
-          <div className="space-y-6">
-            <PaymentSection disabled={isSubmitting} />
-            <CustomMerchantCardDesign priceLabel="Included (free)" />
-          </div>
-          <OrderSummaryCard
-            planLabel={`${activePlan.title} Plan\n(${billingCycle === 'ANNUAL' ? 'Annual' : 'Monthly'})`}
-            lines={[
-              {
-                label: 'Plan',
-                value: isGrowthTrial ? formatInr(0) : baseAmount == null ? '—' : formatInr(baseAmount),
-                muted: true,
-              },
-              { label: 'Merchant Verification Fee', value: formatInr(0), muted: true },
-              {
-                label: 'Taxes & GST (18%)',
-                value: isGrowthTrial ? formatInr(0) : gstAmount == null ? '—' : formatInr(gstAmount),
-                muted: true,
-              },
-              ...(isGrowthTrial
-                ? [{ label: 'Trial', value: '30 days (pay method by day 21)', muted: true }]
-                : []),
-            ]}
-            totalLabel={
-              isGrowthTrial ? formatInr(0) : totalAmount == null ? '—' : formatInr(totalAmount)
-            }
-            ctaLabel={isSubmitting ? 'Submitting' : 'Submit application'}
-            onCta={submit}
-            disabled={isSubmitting}
-          />
-        </div>
-
         <div className="mt-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
@@ -226,6 +183,13 @@ export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPl
               />
             </svg>
             Back to Business Location & Verification
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            className="h-14 rounded-full bg-gradient-to-r from-primary to-[#E91E8C] px-12 text-lg font-extrabold text-white shadow-[0_15px_30px_-8px_rgba(241,30,105,0.45)] hover:brightness-95"
+          >
+            Submit application
           </button>
         </div>
       </RegisterFormCard>

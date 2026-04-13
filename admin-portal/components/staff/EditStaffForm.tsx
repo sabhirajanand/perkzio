@@ -24,7 +24,7 @@ export default function EditStaffForm({ staffId, initial, roles }: EditStaffForm
 
   async function submit() {
     if (!roleId) return toast.error('Role is required');
-    if (!status.trim()) return toast.error('Status is required');
+    if (!status) return toast.error('Status is required');
 
     setIsSubmitting(true);
     try {
@@ -33,7 +33,7 @@ export default function EditStaffForm({ staffId, initial, roles }: EditStaffForm
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fullName: fullName.trim() ? fullName.trim() : null,
-          status: status.trim(),
+          status,
           roleId,
         }),
       });
@@ -62,8 +62,31 @@ export default function EditStaffForm({ staffId, initial, roles }: EditStaffForm
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Input id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="ACTIVE" />
+          <p className="text-sm font-semibold text-zinc-900">
+            Status <span className="text-red-500">*</span>
+          </p>
+          <div className="mt-3 flex items-center gap-8">
+            <label className="inline-flex items-center gap-3 text-sm text-zinc-900">
+              <input
+                type="radio"
+                name="status"
+                className="h-4 w-4 accent-primary"
+                checked={status === 'DEACTIVATED'}
+                onChange={() => setStatus('DEACTIVATED')}
+              />
+              Inactive
+            </label>
+            <label className="inline-flex items-center gap-3 text-sm text-zinc-900">
+              <input
+                type="radio"
+                name="status"
+                className="h-4 w-4 accent-primary"
+                checked={status !== 'DEACTIVATED'}
+                onChange={() => setStatus('ACTIVE')}
+              />
+              Active
+            </label>
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="role">Role</Label>
