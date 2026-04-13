@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import AdminSidebarNav, { type AdminSidebarNavSection } from '@/components/app/AdminSidebarNav';
 import Button from '@/components/ui/button';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
@@ -90,9 +90,14 @@ export default async function AppShell({ title = 'Admin', children }: AppShellPr
       return hasPermission(session, i.visibility.code);
     }),
   })).filter((s) => s.items.length > 0);
+
+  const sidebarSections: AdminSidebarNavSection[] = visibleSections.map((s) => ({
+    label: s.label,
+    items: s.items.map((i) => ({ href: i.href, label: i.label })),
+  }));
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-black/5 bg-white lg:flex lg:flex-col">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-black/5 bg-white md:flex md:flex-col">
         <div className="shrink-0 px-6 py-6">
           <div
             className="h-[56px] w-[170px] bg-[url(/Images/logo.png)] bg-contain bg-left bg-no-repeat"
@@ -101,31 +106,11 @@ export default async function AppShell({ title = 'Admin', children }: AppShellPr
         </div>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
-          <div className="space-y-6">
-            {visibleSections.map((section) => (
-              <div key={section.label}>
-                <p className="px-4 text-[11px] font-extrabold uppercase tracking-[0.14em] text-zinc-500">
-                  {section.label}
-                </p>
-                <ul className="mt-2 space-y-1">
-                  {section.items.map((i) => (
-                    <li key={i.href}>
-                      <Link
-                        href={i.href}
-                        className="block rounded-2xl px-4 py-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
-                      >
-                        {i.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          <AdminSidebarNav sections={sidebarSections} />
         </nav>
       </aside>
 
-      <div className="lg:pl-64">
+      <div className="md:pl-64">
         <header className="sticky top-0 z-10 border-b border-black/5 bg-white/80 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
             <div className="text-sm font-semibold text-zinc-900">{title}</div>

@@ -17,7 +17,7 @@ export default function AppShell({ title = 'Dashboard', children }: AppShellProp
         <aside className="sticky top-0 hidden h-screen w-[256px] shrink-0 flex-col bg-white shadow-[0_25px_50px_-25px_rgba(0,0,0,0.35)] md:flex">
           <div className="border-b border-[#E7E7E7] px-5 py-5">
             <Link href="/dashboard" className="inline-flex w-full items-center justify-center">
-              <Image src="/Images%20logo.png" alt="Perkzio" width={170} height={48} priority className="h-auto w-[170px]" />
+              <Image src="/Images/logo.png" alt="Perkzio" width={170} height={48} priority className="h-auto w-[170px]" />
             </Link>
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
@@ -31,7 +31,7 @@ export default function AppShell({ title = 'Dashboard', children }: AppShellProp
               <div className="flex min-w-0 items-center gap-4">
                 <div className="md:hidden">
                   <Link href="/dashboard" className="inline-flex">
-                    <Image src="/Images%20logo.png" alt="Perkzio" width={170} height={48} priority className="h-auto w-[170px]" />
+                    <Image src="/Images logo.png" alt="Perkzio" width={170} height={48} priority className="h-auto w-[170px]" />
                   </Link>
                 </div>
                 <span className="hidden text-sm font-semibold text-zinc-700 md:inline">{title}</span>
