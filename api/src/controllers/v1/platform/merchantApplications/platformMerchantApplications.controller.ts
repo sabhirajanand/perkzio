@@ -3,11 +3,11 @@ import { z } from 'zod';
 
 import { getDataSource } from '../../../../config/database.js';
 import { MerchantOnboardingApplication } from '../../../../entities/MerchantOnboardingApplication.js';
+import { Merchant } from '../../../../entities/Merchant.js';
 import { PlatformStaff } from '../../../../entities/PlatformStaff.js';
 import { AppError } from '../../../../errors/AppError.js';
 import { ErrorCodes } from '../../../../errors/codes.js';
 import { sendEmail } from '../../../../lib/notifications/email.js';
-import { provisionMerchantFromApplication } from '../../../../services/merchantOnboarding/provisionMerchantFromApplication.js';
 
 const listSchema = z.object({
   status: z.string().optional(),
@@ -107,28 +107,31 @@ export async function approveMerchantApplication(req: Request, res: Response): P
   if (application.status !== 'SUBMITTED') {
     throw new AppError(409, ErrorCodes.CONFLICT, 'Only SUBMITTED applications can be approved');
   }
-  if (application.merchant) {
-    throw new AppError(409, ErrorCodes.CONFLICT, 'Application already provisioned');
-  }
 
   const reviewer = await staffRepo.findOne({ where: { id: staffId } });
   if (!reviewer) throw new AppError(401, ErrorCodes.UNAUTHORIZED, 'Invalid staff session');
 
-  const { merchant, merchantAdminUser } = await provisionMerchantFromApplication({ application });
+  if (!application.merchant) {
+    throw new AppError(409, ErrorCodes.CONFLICT, 'Merchant record is missing for this application');
+  }
+
+  const merchantRepo = ds.getRepository(Merchant);
+  application.merchant.status = 'ACTIVE';
+  application.merchant.subscriptionLimitedMode = false;
+  await merchantRepo.save(application.merchant);
 
   application.status = 'APPROVED';
-  application.merchant = merchant;
   application.reviewedByStaff = reviewer;
   application.reviewedAt = new Date();
   await appRepo.save(application);
 
   await sendEmail({
-    to: [merchantAdminUser.email],
+    to: [String((application.businessPayload as Record<string, unknown> | null)?.contactEmail ?? '').toLowerCase()].filter(Boolean),
     subject: `Perkzio: Application approved (${application.referenceNumber})`,
-    text: `Your merchant registration has been approved.\n\nReference: ${application.referenceNumber}\nLogin email: ${merchantAdminUser.email}\n\nYou can now log in to the merchant portal using the password you set during registration.`,
+    text: `Your merchant registration has been approved.\n\nReference: ${application.referenceNumber}\n\nYour portal access has been unlocked.`,
   });
 
-  res.json({ ok: true, status: application.status, merchantId: merchant.id });
+  res.json({ ok: true, status: application.status, merchantId: application.merchant.id });
 }
 
 export async function rejectMerchantApplication(req: Request, res: Response): Promise<void> {
@@ -153,6 +156,12 @@ export async function rejectMerchantApplication(req: Request, res: Response): Pr
   application.reviewedByStaff = reviewer;
   application.reviewedAt = new Date();
   await appRepo.save(application);
+
+  if (application.merchant) {
+    const merchantRepo = ds.getRepository(Merchant);
+    application.merchant.status = 'INACTIVE';
+    await merchantRepo.save(application.merchant);
+  }
 
   const payload = application.businessPayload && typeof application.businessPayload === 'object' ? (application.businessPayload as Record<string, unknown>) : {};
   const contactEmail = typeof payload.contactEmail === 'string' ? payload.contactEmail.toLowerCase() : null;

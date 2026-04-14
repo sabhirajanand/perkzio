@@ -25,7 +25,13 @@ export default function LoginShell({ title, subtitle, children }: LoginShellProp
             <div className="relative flex h-full flex-col">
               <div className="flex items-center">
                 <div className="relative h-[81.46px] min-w-[324px] overflow-hidden">
-                  <Image src="/Images/logo.png" alt="Perkzio" fill className="object-contain object-left" />
+                  <Image
+                    src="/Images/logo.png"
+                    alt="Perkzio"
+                    fill
+                    className="object-contain object-left"
+                    sizes="324px"
+                  />
                 </div>
               </div>
 

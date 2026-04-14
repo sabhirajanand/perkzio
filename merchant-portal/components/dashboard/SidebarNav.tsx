@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils/cn';
 
@@ -26,10 +27,36 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function SidebarNav() {
   const pathname = usePathname();
+  const [merchantStatus, setMerchantStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/merchant/me', { method: 'GET' })
+      .then(async (r) => (r.ok ? ((await r.json().catch(() => null)) as unknown) : null))
+      .then((json) => {
+        if (cancelled) return;
+        const status =
+          json && typeof json === 'object'
+            ? String((json as { merchant?: { status?: unknown } }).merchant?.status ?? '')
+            : '';
+        setMerchantStatus(status || null);
+      })
+      .catch(() => {
+        if (!cancelled) setMerchantStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const visibleItems = useMemo(() => {
+    if (merchantStatus === 'ACTIVE' || merchantStatus === null) return NAV_ITEMS;
+    return NAV_ITEMS.filter((i) => i.href === '/dashboard' || i.href === '/settings');
+  }, [merchantStatus]);
 
   return (
     <nav className="space-y-1">
-      {NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link

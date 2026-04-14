@@ -6,8 +6,10 @@ import { loadEnv } from '../../../../config/env.js';
 import { getDataSource } from '../../../../config/database.js';
 import { MerchantKycDocument } from '../../../../entities/MerchantKycDocument.js';
 import { MerchantOnboardingApplication } from '../../../../entities/MerchantOnboardingApplication.js';
-import { OtpChallenge } from '../../../../entities/OtpChallenge.js';
 import { SubscriptionPlan } from '../../../../entities/SubscriptionPlan.js';
+import { Merchant } from '../../../../entities/Merchant.js';
+import { Branch } from '../../../../entities/Branch.js';
+import { MerchantUser } from '../../../../entities/MerchantUser.js';
 import { AppError } from '../../../../errors/AppError.js';
 import { ErrorCodes } from '../../../../errors/codes.js';
 import { getRazorpayClient, getRazorpayKeyId } from '../../../../lib/payments/razorpay.js';
@@ -53,7 +55,6 @@ const registerApplicationSchema = z.object({
   shopPhotoUploadKey: z.string().optional(),
   plan: z.enum(['LITE', 'GROWTH', 'PRO']),
   billingCycle: z.enum(['MONTHLY', 'ANNUAL']).optional(),
-  emailOtpChallengeId: z.string().uuid(),
 });
 
 function createReferenceNumber(): string {
@@ -75,10 +76,10 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
   }
 
   const ds = getDataSource();
-  const otpRepo = ds.getRepository(OtpChallenge);
-  const emailOtp = await otpRepo.findOne({ where: { id: parsed.data.emailOtpChallengeId } });
-  if (!emailOtp || !emailOtp.consumedAt || !emailOtp.expiresAt || emailOtp.expiresAt.getTime() < Date.now()) {
-    throw new AppError(401, ErrorCodes.UNAUTHENTICATED, 'Email verification required');
+  const userRepo = ds.getRepository(MerchantUser);
+  const existingUser = await userRepo.findOne({ where: { email: parsed.data.contactEmail.toLowerCase() } });
+  if (existingUser) {
+    throw new AppError(409, ErrorCodes.CONFLICT, 'Business email is already registered');
   }
 
   const planRepo = ds.getRepository(SubscriptionPlan);
@@ -90,17 +91,74 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
   const appRepo = ds.getRepository(MerchantOnboardingApplication);
   const passwordHash = await hashPassword({ password: parsed.data.password });
   const {
-    emailOtpChallengeId: _emailOtpChallengeId,
     password: _password,
     ...businessPayload
   } = parsed.data;
-  void _emailOtpChallengeId;
   void _password;
+
+  const merchantRepo = ds.getRepository(Merchant);
+  const branchRepo = ds.getRepository(Branch);
+
+  const merchant = await merchantRepo.save(
+    merchantRepo.create({
+      legalName: parsed.data.businessName,
+      tradingName: null,
+      category: null,
+      status: 'PENDING_APPROVAL',
+      kycStatus: 'PENDING',
+      subscriptionLimitedMode: true,
+      primaryBusinessEmail: parsed.data.contactEmail.toLowerCase(),
+      pan: parsed.data.pan,
+      gstin: parsed.data.gstin ?? null,
+      registeredAddress: {
+        line1: parsed.data.addressLine1,
+        city: parsed.data.city,
+        state: parsed.data.state,
+        pinCode: parsed.data.pinCode,
+        mapsUrl: parsed.data.mapsUrl,
+      },
+      referralCode: null,
+    }),
+  );
+
+  const headBranch = await branchRepo.save(
+    branchRepo.create({
+      merchant,
+      name: 'Head Branch',
+      isHeadBranch: true,
+      status: 'ACTIVE',
+      address: merchant.registeredAddress,
+      googleMapsPlaceId: null,
+      latitude: null,
+      longitude: null,
+      openingHours: null,
+      socialLinks: {
+        website: parsed.data.website,
+        instagram: parsed.data.instagram,
+        facebook: parsed.data.facebook,
+        googleBusinessUrl: parsed.data.googleBusinessUrl,
+      },
+    }),
+  );
+
+  await userRepo.save(
+    userRepo.create({
+      merchant,
+      branch: headBranch,
+      email: parsed.data.contactEmail.toLowerCase(),
+      passwordHash,
+      role: 'MERCHANT_ADMIN',
+      status: 'ACTIVE',
+      lastLoginAt: null,
+    }),
+  );
+
   const application = appRepo.create({
     referenceNumber: createReferenceNumber(),
     status: parsed.data.plan === 'LITE' ? 'PAYMENT_PENDING' : 'SUBMITTED',
     businessPayload: { ...businessPayload, passwordHash },
     selectedPlan,
+    merchant,
   });
 
   await appRepo.save(application);

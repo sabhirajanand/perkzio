@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>perkzio — Pricing</title>
+<link rel="icon" href="/Images/icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --pink:       #FF1F72;
+  --pink-dark:  #C4005A;
+  --pink-light: #FFF0F6;
+  --pink-mid:   #FFD6EA;
+  --dark:       #111111;
+  --mid:        #555555;
+  --light:      #F7F7F7;
+  --border:     #E8E8E8;
+  --gold:       #C98A00;
+  --gold-light: #FFFBEC;
+  --green:      #12854A;
+  --white:      #FFFFFF;
+  --radius:     20px;
+  --shadow-sm:  0 2px 12px rgba(0,0,0,0.07);
+  --shadow-md:  0 8px 32px rgba(0,0,0,0.10);
+  --shadow-pink: 0 12px 40px rgba(255,31,114,0.22);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #FAFAFA;
+  color: var(--dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.93);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+}
+.nav-brand { font-family: 'Fredoka One', cursive; font-size: 24px; color: var(--pink); }
+.nav-links { display: flex; gap: 28px; }
+.nav-links a { font-size: 14px; font-weight: 700; color: var(--mid); text-decoration: none; transition: color .2s; }
+.nav-links a:hover, .nav-links a.active { color: var(--pink); }
+.nav-cta {
+  background: var(--pink); color: white; border: none;
+  border-radius: 30px; padding: 10px 22px;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; transition: background .2s, transform .15s;
+}
+.nav-cta:hover { background: var(--pink-dark); transform: translateY(-1px); }
+
+/* HERO */
+.hero {
+  text-align: center; padding: 72px 24px 48px;
+  background: linear-gradient(180deg, #FFF0F6 0%, #FAFAFA 100%);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,31,114,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--pink-light); border: 1px solid var(--pink-mid);
+  border-radius: 30px; padding: 6px 16px;
+  font-size: 13px; font-weight: 800; color: var(--pink);
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(36px, 6vw, 58px);
+  color: var(--dark); line-height: 1.1;
+  margin-bottom: 16px; letter-spacing: -1px;
+}
+.hero h1 span { color: var(--pink); }
+.hero p { font-size: 17px; font-weight: 600; color: var(--mid); max-width: 520px; margin: 0 auto 36px; line-height: 1.6; }
+
+/* BILLING TOGGLE */
+.billing-wrap { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.billing-toggle {
+  display: inline-flex; align-items: center;
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: 40px; padding: 4px;
+}
+.toggle-btn {
+  padding: 10px 24px; border-radius: 30px; border: none;
+  background: transparent; font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 800; cursor: pointer; color: var(--mid);
+  transition: all .25s;
+}
+.toggle-btn.active { background: var(--pink); color: white; box-shadow: 0 4px 14px rgba(255,31,114,0.3); }
+.save-badge {
+  display: none; align-items: center;
+  background: #E8F8EF; border: 1px solid #B6E8CF;
+  color: var(--green); border-radius: 20px;
+  padding: 4px 12px; font-size: 13px; font-weight: 800;
+}
+.save-badge.show { display: inline-flex; }
+
+/* PLAN CARDS */
+.plans-wrapper {
+  max-width: 1100px; margin: 40px auto 0;
+  padding: 0 20px 24px;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 20px; align-items: start;
+}
+.plan-card {
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: var(--radius); padding: 32px 28px 28px;
+  position: relative; transition: transform .25s, box-shadow .25s, border-color .25s;
+}
+.plan-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.plan-card.popular {
+  border-color: var(--pink); box-shadow: var(--shadow-pink);
+  transform: translateY(-8px);
+}
+.plan-card.popular:hover { transform: translateY(-12px); box-shadow: 0 20px 60px rgba(255,31,114,0.28); }
+
+.popular-badge {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #C98A00, #FFC107);
+  color: white; border-radius: 20px; padding: 5px 18px;
+  font-size: 12px; font-weight: 900; letter-spacing: .8px;
+  text-transform: uppercase; white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(201,138,0,0.4);
+}
+.plan-name { font-family: 'Fredoka One', cursive; font-size: 28px; color: var(--dark); margin-bottom: 4px; }
+.plan-card.popular .plan-name { color: var(--pink); }
+.plan-tagline { font-size: 13px; font-weight: 600; color: var(--mid); margin-bottom: 20px; }
+
+.plan-price-wrap { margin-bottom: 6px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
+.plan-price { font-family: 'Fredoka One', cursive; font-size: 44px; color: var(--dark); line-height: 1; }
+.plan-card.popular .plan-price { color: var(--pink); }
+.plan-price-per { font-size: 14px; font-weight: 700; color: var(--mid); }
+.plan-price-was { font-size: 15px; color: #BBB; text-decoration: line-through; margin-left: 4px; }
+
+.plan-annual-note { font-size: 13px; font-weight: 700; color: var(--mid); margin-bottom: 20px; min-height: 18px; }
+.plan-annual-note .saving { color: var(--green); font-weight: 800; }
+
+.trial-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--pink-light); border: 1px solid var(--pink-mid);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 12px; font-weight: 800; color: var(--pink); margin-bottom: 22px;
+}
+.plan-card:not(.popular) .trial-pill { background: var(--light); border-color: var(--border); color: var(--mid); }
+
+.no-card-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #E8F5EE; border: 1px solid #B6E8CF;
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 11px; font-weight: 800; color: var(--green);
+  margin-left: 6px;
+}
+
+.divider { height: 1px; background: var(--border); margin: 0 0 20px; }
+
+.features-list { list-style: none; margin-bottom: 28px; }
+.features-list li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 14px; font-weight: 700; color: var(--dark);
+  padding: 5px 0; line-height: 1.4;
+}
+.feat-icon {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0; margin-top: 1px;
+}
+.feat-icon.yes { background: var(--pink-light); color: var(--pink); }
+.feat-icon.no  { background: var(--light); color: #CCC; }
+.plan-card.popular .feat-icon.yes { background: var(--pink); color: white; }
+
+.plan-cta {
+  width: 100%; padding: 14px; border-radius: 14px; border: none;
+  font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 900;
+  cursor: pointer; transition: all .2s;
+}
+.plan-cta.primary {
+  background: linear-gradient(135deg, var(--pink), #FF6BA8);
+  color: white; box-shadow: 0 6px 20px rgba(255,31,114,0.35);
+}
+.plan-cta.primary:hover { background: linear-gradient(135deg, var(--pink-dark), var(--pink)); transform: translateY(-2px); }
+.plan-cta.secondary { background: var(--white); color: var(--dark); border: 2px solid var(--border); }
+.plan-cta.secondary:hover { border-color: var(--pink); color: var(--pink); transform: translateY(-2px); }
+.plan-cta.outline { background: transparent; color: var(--pink); border: 2px solid var(--pink); }
+.plan-cta.outline:hover { background: var(--pink); color: white; transform: translateY(-2px); }
+
+.no-card-note { text-align: center; margin-top: 10px; font-size: 12px; font-weight: 700; color: var(--green); }
+
+/* COMPARE LINK */
+.compare-link-wrap { text-align: center; padding: 20px 0 40px; }
+.compare-link {
+  font-size: 15px; font-weight: 800; color: var(--pink);
+  text-decoration: none; border-bottom: 2px solid var(--pink-mid);
+  padding-bottom: 2px; transition: border-color .2s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.compare-link:hover { border-color: var(--pink); }
+
+/* CALCULATOR */
+.calculator {
+  max-width: 760px; margin: 0 auto 64px;
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: var(--radius); padding: 36px 40px;
+  box-shadow: var(--shadow-sm);
+}
+.calc-title { font-family: 'Fredoka One', cursive; font-size: 24px; color: var(--dark); margin-bottom: 6px; }
+.calc-sub { font-size: 14px; font-weight: 600; color: var(--mid); margin-bottom: 28px; }
+.calc-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+.calc-label { font-size: 15px; font-weight: 800; color: var(--dark); flex: 1; min-width: 160px; }
+.calc-controls { display: flex; align-items: center; gap: 8px; }
+.calc-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border);
+  background: var(--white); font-size: 18px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--dark); transition: all .15s;
+}
+.calc-btn:hover { border-color: var(--pink); color: var(--pink); }
+.calc-val { font-size: 20px; font-weight: 900; color: var(--dark); min-width: 32px; text-align: center; }
+.calc-results {
+  background: var(--pink-light); border-radius: 14px;
+  padding: 20px 24px; margin-top: 8px;
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 16px;
+}
+.calc-plan-result { text-align: center; }
+.calc-plan-name { font-size: 13px; font-weight: 800; color: var(--mid); margin-bottom: 4px; }
+.calc-plan-price { font-family: 'Fredoka One', cursive; font-size: 28px; color: var(--dark); line-height: 1; }
+.calc-plan-price.featured { color: var(--pink); font-size: 34px; }
+.calc-plan-breakdown { font-size: 11px; font-weight: 700; color: var(--mid); margin-top: 3px; line-height: 1.5; }
+.calc-best { display: inline-block; background: var(--pink); color: white; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 800; margin-top: 4px; }
+
+/* SOCIAL PROOF */
+.social-strip { background: var(--dark); padding: 48px 24px; text-align: center; }
+.social-strip p { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.4); margin-bottom: 24px; letter-spacing: 2px; text-transform: uppercase; }
+.testimonials { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 900px; margin: 0 auto; }
+.testimonial {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px; padding: 20px 24px; max-width: 260px; text-align: left;
+}
+.testimonial-text { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.85); line-height: 1.6; margin-bottom: 12px; }
+.testimonial-author { font-size: 12px; font-weight: 800; color: var(--pink); }
+.testimonial-biz { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); }
+
+/* FAQ */
+.faq-section { max-width: 700px; margin: 0 auto; padding: 64px 24px; }
+.faq-title { font-family: 'Fredoka One', cursive; font-size: 32px; color: var(--dark); text-align: center; margin-bottom: 8px; }
+.faq-sub { text-align: center; font-size: 15px; font-weight: 600; color: var(--mid); margin-bottom: 36px; }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-q {
+  width: 100%; background: none; border: none; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 0; font-family: 'Nunito', sans-serif;
+  font-size: 15px; font-weight: 800; color: var(--dark);
+  text-align: left; gap: 12px; transition: color .2s;
+}
+.faq-q:hover { color: var(--pink); }
+.faq-arrow {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--light); display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0; transition: all .25s; color: var(--mid);
+}
+.faq-item.open .faq-arrow { background: var(--pink-light); color: var(--pink); transform: rotate(45deg); }
+.faq-a { font-size: 14px; font-weight: 600; color: var(--mid); line-height: 1.7; padding: 0 0 18px; display: none; }
+.faq-item.open .faq-a { display: block; }
+
+/* FULL COMPARISON TABLE */
+.comparison-section { max-width: 1100px; margin: 0 auto; padding: 0 20px 80px; }
+.comparison-anchor { display: block; padding-top: 80px; margin-top: -80px; }
+.comparison-title { font-family: 'Fredoka One', cursive; font-size: 32px; color: var(--dark); text-align: center; margin-bottom: 8px; }
+.comparison-sub { text-align: center; font-size: 15px; font-weight: 600; color: var(--mid); margin-bottom: 36px; }
+
+.comp-table { width: 100%; border-collapse: collapse; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.comp-table th, .comp-table td { padding: 13px 16px; text-align: center; border-bottom: 1px solid var(--border); font-size: 14px; }
+.comp-table th:first-child, .comp-table td:first-child { text-align: left; width: 36%; }
+.comp-table thead tr:first-child th { background: var(--dark); color: white; font-family: 'Fredoka One', cursive; font-size: 20px; padding: 20px 16px; }
+.comp-table thead tr:first-child th:nth-child(3) { background: var(--pink); }
+.comp-table thead tr:first-child th:first-child { font-size: 13px; font-weight: 800; }
+.comp-table thead tr.price-row th { background: var(--dark); padding: 2px 16px 20px; font-family: 'Fredoka One', cursive; font-size: 24px; color: #FF8CC8; }
+.comp-table thead tr.price-row th:first-child { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.35); }
+.comp-table thead tr.price-row th:nth-child(3) { background: var(--pink); color: rgba(255,255,255,0.85); }
+.comp-table tr.section-hdr td { background: #F0F0F0; font-size: 11px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: var(--mid); padding: 9px 16px; border-bottom: none; }
+.comp-table tr.section-hdr td:first-child { text-align: left; }
+.comp-table tbody tr:not(.section-hdr):nth-child(even) td { background: #FAFAFA; }
+.comp-table tbody tr:not(.section-hdr):nth-child(odd) td { background: var(--white); }
+.comp-table tbody tr:not(.section-hdr) td:nth-child(3) { background: var(--pink-light) !important; }
+.comp-table tbody tr:not(.section-hdr):hover td { background: var(--pink-light) !important; }
+.comp-table td:first-child { font-size: 14px; font-weight: 700; color: var(--dark); }
+.comp-table td.sub { font-size: 12px; font-weight: 600; color: var(--mid); }
+.check { color: var(--pink); font-size: 18px; font-weight: 900; }
+.dash  { color: #CCC; font-size: 18px; }
+.comp-val { font-size: 13px; font-weight: 800; color: var(--dark); }
+.comp-val.pink { color: var(--pink); }
+.comp-val.green { color: var(--green); }
+.strike { text-decoration: line-through; color: #BBB; }
+td small { display: block; font-size: 11px; font-weight: 600; color: var(--mid); margin-top: 2px; }
+
+/* Add-ons section */
+.addons-section { max-width: 800px; margin: 0 auto 64px; padding: 0 20px; }
+.addons-title { font-family: 'Fredoka One', cursive; font-size: 26px; color: var(--dark); margin-bottom: 8px; }
+.addons-sub { font-size: 14px; font-weight: 600; color: var(--mid); margin-bottom: 24px; }
+.addons-table { width: 100%; border-collapse: collapse; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.addons-table th { background: var(--dark); color: white; font-size: 14px; font-weight: 800; padding: 14px 18px; text-align: left; }
+.addons-table td { padding: 12px 18px; font-size: 14px; font-weight: 700; border-bottom: 1px solid var(--border); }
+.addons-table tr:nth-child(even) td { background: var(--light); }
+.addons-table tr:nth-child(odd) td { background: var(--white); }
+
+/* FOOTER CTA */
+.footer-cta { background: linear-gradient(135deg, var(--pink), #FF6BA8); padding: 64px 24px; text-align: center; }
+.footer-cta h2 { font-family: 'Fredoka One', cursive; font-size: 38px; color: white; margin-bottom: 12px; }
+.footer-cta p { font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.85); margin-bottom: 28px; }
+.footer-cta-btn {
+  background: white; color: var(--pink); border: none; border-radius: 30px;
+  padding: 16px 36px; font-family: 'Nunito', sans-serif;
+  font-size: 16px; font-weight: 900; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: transform .2s, box-shadow .2s;
+}
+.footer-cta-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.2); }
+.footer-note { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.7); margin-top: 12px; }
+
+/* RESPONSIVE */
+@media (max-width: 860px) {
+  .plans-wrapper { grid-template-columns: 1fr; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .plan-card.popular { transform: none; }
+  .calc-results { grid-template-columns: 1fr; }
+  nav .nav-links { display: none; }
+  .comp-table th, .comp-table td { padding: 10px 8px; font-size: 12px; }
+}
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+.plan-card { animation: fadeUp .5s ease both; }
+.plan-card:nth-child(1) { animation-delay: .1s; }
+.plan-card:nth-child(2) { animation-delay: .2s; }
+.plan-card:nth-child(3) { animation-delay: .3s; }
+</style>
+</head>
+<body>
+
+<nav>
+  <img src="/Images/logo.png" alt="Perkzio" style="width:170px;height:auto;display:block;" />
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">✦ Simple, transparent pricing</div>
+  <h1>Grow loyal customers<br><span>without the complexity</span></h1>
+  <p>Three plans for every merchant. No hidden fees. Cancel any time. 30-day free trial on Growth — no card required.</p>
+
+  <div class="billing-wrap">
+    <div class="billing-toggle">
+      <button class="toggle-btn active" id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
+      <button class="toggle-btn" id="btn-annual" onclick="setBilling('annual')">Annual</button>
+    </div>
+    <span class="save-badge" id="save-badge">🎉 Save 2 months free</span>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--mid);margin-top:8px;">All prices exclusive of GST · Per outlet per month</div>
+</section>
+
+<!-- PLAN CARDS -->
+<div class="plans-wrapper">
+
+  <!-- LITE -->
+  <div class="plan-card">
+    <div class="plan-name">Lite</div>
+    <div class="plan-tagline">Perfect for single-outlet shops getting started</div>
+    <div class="plan-price-wrap">
+      <span class="plan-price" id="lite-price">₹599</span>
+      <span class="plan-price-per">/mo</span>
+    </div>
+    <div class="plan-annual-note" id="lite-annual-note">&nbsp;</div>
+    <div style="margin-bottom:22px;">
+      <div class="trial-pill" style="background:var(--light);border-color:var(--border);color:var(--mid);">💳 No free trial · Pay to start</div>
+    </div>
+    <div class="divider"></div>
+    <ul class="features-list">
+      <li><span class="feat-icon yes">✓</span>1 outlet · 1 loyalty card</li>
+      <li><span class="feat-icon yes">✓</span>Up to 100 active customers</li>
+      <li><span class="feat-icon yes">✓</span>Stamp manager + consumer app</li>
+      <li><span class="feat-icon yes">✓</span>Push notifications</li>
+      <li><span class="feat-icon yes">✓</span>Basic analytics + monthly report</li>
+      <li><span class="feat-icon yes">✓</span>Custom card design included</li>
+      <li><span class="feat-icon yes">✓</span>Email + ticket support</li>
+      <li><span class="feat-icon no">–</span>Campaigns &amp; special offers</li>
+    </ul>
+    <button class="plan-cta secondary">Get Started · ₹599/mo</button>
+  </div>
+
+  <!-- GROWTH (popular) -->
+  <div class="plan-card popular">
+    <div class="popular-badge">★ Most Popular</div>
+    <div class="plan-name">Growth</div>
+    <div class="plan-tagline">Everything you need to build serious loyalty</div>
+    <div class="plan-price-wrap">
+      <span class="plan-price" id="growth-price">₹999</span>
+      <span class="plan-price-per">/mo</span>
+    </div>
+    <div class="plan-annual-note" id="growth-annual-note">&nbsp;</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:22px;flex-wrap:wrap;">
+      <div class="trial-pill">🎁 30-day free trial</div>
+      <span class="no-card-pill">✓ No card needed</span>
+    </div>
+    <div class="divider"></div>
+    <ul class="features-list">
+      <li><span class="feat-icon yes">✓</span>1 outlet · <strong>3 loyalty cards</strong></li>
+      <li><span class="feat-icon yes">✓</span><strong>Unlimited</strong> active customers</li>
+      <li><span class="feat-icon yes">✓</span>Stamp manager + consumer app</li>
+      <li><span class="feat-icon yes">✓</span>Push notifications + <strong>5 campaigns/mo</strong></li>
+      <li><span class="feat-icon yes">✓</span><strong>Advanced</strong> analytics + data export</li>
+      <li><span class="feat-icon yes">✓</span>Special offers module (unlimited)</li>
+      <li><span class="feat-icon yes">✓</span>Multi-outlet stamp sharing</li>
+      <li><span class="feat-icon yes">✓</span>Custom card design included</li>
+      <li><span class="feat-icon yes">✓</span>Phone + email + ticket support</li>
+    </ul>
+    <button class="plan-cta primary">Start 30-Day Free Trial</button>
+    <div class="no-card-note">✓ No credit card required</div>
+  </div>
+
+  <!-- PRO -->
+  <div class="plan-card">
+    <div class="plan-name">Pro</div>
+    <div class="plan-tagline">For multi-outlet businesses &amp; franchises</div>
+    <div class="plan-price-wrap">
+      <span style="font-size:15px;font-weight:800;color:var(--mid);">From&nbsp;</span>
+      <span class="plan-price" id="pro-price">₹2,999</span>
+      <span class="plan-price-per">/mo</span>
+    </div>
+    <div class="plan-annual-note" id="pro-annual-note"><span class="saving">Custom annual billing available</span></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:22px;flex-wrap:wrap;">
+      <div class="trial-pill">📞 Demo call to get started</div>
+      <span class="no-card-pill">✓ No card needed</span>
+    </div>
+    <div class="divider"></div>
+    <ul class="features-list">
+      <li><span class="feat-icon yes">✓</span><strong>3 outlets</strong> included (up to 10+)</li>
+      <li><span class="feat-icon yes">✓</span><strong>Unlimited</strong> loyalty cards</li>
+      <li><span class="feat-icon yes">✓</span>Unlimited active customers</li>
+      <li><span class="feat-icon yes">✓</span>Push notifications</li>
+      <li><span class="feat-icon yes">✓</span>Unlimited campaigns + special offers</li>
+      <li><span class="feat-icon yes">✓</span>Custom analytics dashboard + data export</li>
+      <li><span class="feat-icon yes">✓</span>Multi-outlet stamp sharing</li>
+      <li><span class="feat-icon yes">✓</span>Custom card design included</li>
+      <li><span class="feat-icon yes">✓</span>Dedicated account manager</li>
+    </ul>
+    <button class="plan-cta outline">Book a Demo Call</button>
+    <div class="no-card-note">✓ No credit card required</div>
+  </div>
+
+</div><!-- end plans-wrapper -->
+
+<!-- COMPARE LINK -->
+<div class="compare-link-wrap">
+  <a href="#comparison" class="compare-link">
+    Compare all features in detail
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3l5 5-5 5M3 8h10" stroke="var(--pink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</div>
+
+<!-- CALCULATOR -->
+<div style="padding:0 20px;">
+<div class="calculator">
+  <div class="calc-title">💡 Calculate your monthly cost</div>
+  <div class="calc-sub">Adjust outlets and loyalty cards to see your exact price</div>
+  <div class="calc-row">
+    <div class="calc-label">Number of outlets</div>
+    <div class="calc-controls">
+      <button class="calc-btn" onclick="change('outlets',-1)">−</button>
+      <div class="calc-val" id="outlets-val">1</div>
+      <button class="calc-btn" onclick="change('outlets',1)">+</button>
+    </div>
+  </div>
+  <div class="calc-row">
+    <div class="calc-label">Loyalty cards needed</div>
+    <div class="calc-controls">
+      <button class="calc-btn" onclick="change('cards',-1)">−</button>
+      <div class="calc-val" id="cards-val">1</div>
+      <button class="calc-btn" onclick="change('cards',1)">+</button>
+    </div>
+  </div>
+  <div class="calc-results" id="calc-results"></div>
+</div>
+</div>
+
+<!-- SOCIAL PROOF -->
+<div class="social-strip" style="margin-top:64px;">
+  <p>What merchants say</p>
+  <div class="testimonials">
+    <div class="testimonial">
+      <div class="testimonial-text">"Set it up in 10 minutes. My regulars love collecting stamps. First reward was claimed in week 2."</div>
+      <div class="testimonial-author">Ravi S.</div>
+      <div class="testimonial-biz">Brew &amp; Co. Café · Bengaluru</div>
+    </div>
+    <div class="testimonial">
+      <div class="testimonial-text">"The analytics actually tell me which customers are slipping away. Never had that visibility before."</div>
+      <div class="testimonial-author">Priya M.</div>
+      <div class="testimonial-biz">Glow Studio · Pune</div>
+    </div>
+    <div class="testimonial">
+      <div class="testimonial-text">"Running 3 outlets. The multi-outlet card sharing is a game changer — customers scan at any branch."</div>
+      <div class="testimonial-author">Arjun K.</div>
+      <div class="testimonial-biz">Fitness Hub · Mumbai</div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="faq-section">
+  <div class="faq-title">Common questions</div>
+  <div class="faq-sub">Everything you need to know before you start</div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <button class="faq-q">Do I need a credit card to start the trial? <span class="faq-arrow">+</span></button>
+    <div class="faq-a">Lite has no free trial — you pay from day one at ₹599/month. Growth offers a 30-day free trial with no credit card required upfront. Your payment method is collected at day 21 to ensure no interruption. On Pro, payment details are agreed after your demo call.</div>
+  </div>
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <button class="faq-q">What is the custom card design offer? <span class="faq-arrow">+</span></button>
+    <div class="faq-a">Custom card design is free for all merchants during the initial launch period. This means our team will design a branded loyalty card for your shop at no charge. After the promotional period, custom design will be available at ₹999 per card as a one-time fee.</div>
+  </div>
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <button class="faq-q">Can I change my plan after signing up? <span class="faq-arrow">+</span></button>
+    <div class="faq-a">Yes, at any time. Upgrades are prorated — you pay the difference for the remaining days in your billing cycle. Downgrades take effect at the start of your next billing cycle. Your data and customer stamps are always preserved.</div>
+  </div>
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <button class="faq-q">What happens to my customers' stamps if I cancel? <span class="faq-arrow">+</span></button>
+    <div class="faq-a">If you cancel, your account enters a 30-day dormant state where your customers' stamp data is fully preserved. Reactivate any time within 30 days and pick up exactly where you left off. After 30 days data is archived for 12 months.</div>
+  </div>
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <button class="faq-q">How does billing work for multiple outlets? <span class="faq-arrow">+</span></button>
+    <div class="faq-a">Each plan includes a base outlet. Additional outlets are +₹599/mo on Lite, +₹999/mo on Growth, and +₹799/mo on Pro (up to 10 outlets). Beyond 10 outlets on Pro, contact us for custom pricing. Your Subscription page shows your exact monthly total.</div>
+  </div>
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <button class="faq-q">Are prices inclusive of GST? <span class="faq-arrow">+</span></button>
+    <div class="faq-a">All prices shown are exclusive of 18% GST. GST is added at checkout and a proper GST invoice is automatically generated and emailed on every billing date.</div>
+  </div>
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <button class="faq-q">What counts as an active customer? <span class="faq-arrow">+</span></button>
+    <div class="faq-a">An active customer is any unique consumer who has scanned at your outlet at least once in the last 30 days. On Lite, this is capped at 100 — a natural limit for small single-outlet shops. Growth and Pro have no cap.</div>
+  </div>
+</div>
+
+<!-- FULL COMPARISON TABLE -->
+<div class="comparison-section">
+  <span class="comparison-anchor" id="comparison"></span>
+  <div class="comparison-title">Full feature comparison</div>
+  <div class="comparison-sub">Every feature, every tier — side by side</div>
+
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th style="text-align:left;font-size:12px;font-weight:700;color:rgba(255,255,255,0.35)">Feature</th>
+        <th>Lite<br><span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.55)">₹599/mo</span></th>
+        <th>Growth<br><span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.85)">₹999/mo</span></th>
+        <th>Pro<br><span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.55)">From ₹2,999/mo</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="section-hdr"><td colspan="4">OUTLETS</td></tr>
+      <tr><td>Outlets included</td><td class="comp-val">1</td><td class="comp-val pink">1</td><td class="comp-val">3</td></tr>
+      <tr><td>Additional outlets<small>per outlet per month</small></td><td class="comp-val">+₹599/mo</td><td class="comp-val pink">+₹999/mo</td><td class="comp-val">+₹799/mo</td></tr>
+      <tr><td>Maximum outlets</td><td class="comp-val">3</td><td class="comp-val pink">Unlimited</td><td class="comp-val">10+ / Custom</td></tr>
+
+      <tr class="section-hdr"><td colspan="4">LOYALTY CARDS</td></tr>
+      <tr><td>Cards included</td><td class="comp-val">1</td><td class="comp-val pink">3</td><td class="comp-val">Unlimited</td></tr>
+      <tr><td>Additional cards<small>per card per month</small></td><td class="comp-val">+₹299/mo</td><td class="comp-val pink">+₹299/mo</td><td class="comp-val">Included</td></tr>
+      <tr><td>Custom card design</td><td class="comp-val green">Free initially</td><td class="comp-val green">Free initially</td><td class="comp-val green">Free initially</td></tr>
+      <tr><td>Active customers</td><td class="comp-val">Up to 100</td><td class="comp-val pink">Unlimited</td><td class="comp-val">Unlimited</td></tr>
+
+      <tr class="section-hdr"><td colspan="4">CORE FEATURES</td></tr>
+      <tr><td>Merchant admin console</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Stamp manager (add / remove)</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Consumer app (iOS + Android)</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Consumer loyalty wallet</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>QR standee PDF (auto-generated)</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Business profile page</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>In-app consumer reviews</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Push notifications<small>FCM + APNs · no volume limit</small></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+
+      <tr class="section-hdr"><td colspan="4">GROWTH FEATURES</td></tr>
+      <tr><td>Special offers module</td><td><span class="dash">—</span></td><td class="comp-val pink">Unlimited</td><td class="comp-val">Unlimited</td></tr>
+      <tr><td>Campaigns per month</td><td><span class="dash">—</span></td><td class="comp-val pink">5 / month</td><td class="comp-val">Unlimited</td></tr>
+      <tr><td>Win-back campaigns (auto-triggered)<small>targets customers not seen in 21+ days</small></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Multi-outlet stamp sharing</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Data export (CSV)</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+
+      <tr class="section-hdr"><td colspan="4">ANALYTICS — BASIC (all plans)</td></tr>
+      <tr><td>Total stamps issued (weekly/monthly)</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Active customer count</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Stamp progress overview</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Reward claims this month</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Monthly email report</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+
+      <tr class="section-hdr"><td colspan="4">ANALYTICS — ADVANCED (Growth + Pro)</td></tr>
+      <tr><td>Trend charts (30/60/90 days)</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Customer segments<small>Champions · At-risk · New</small></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Card performance comparison</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Campaign performance tracking</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Visit frequency distribution</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Best day &amp; time heatmap</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Customer behaviour insights</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+
+      <tr class="section-hdr"><td colspan="4">ANALYTICS — CUSTOM (Pro only)</td></tr>
+      <tr><td>Cross-outlet performance comparison</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Customer retention rate (month-on-month)</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Outlet-level customer overlap</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Custom date range filtering</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Weekly email report</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Exportable branded PDF report</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Custom dashboard configuration</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>API access<small>connect to Tableau, Power BI, Data Studio</small></td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td class="comp-val">On request</td></tr>
+
+      <tr class="section-hdr"><td colspan="4">SUPPORT</td></tr>
+      <tr><td>Email support</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Ticket support</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Phone support</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Dedicated account manager</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Onboarding assistance</td><td class="comp-val">Self-serve</td><td class="comp-val pink">Self-serve</td><td class="comp-val">White-glove</td></tr>
+      <tr><td>SLA response time</td><td class="comp-val">48 hrs</td><td class="comp-val pink">24 hrs</td><td class="comp-val">4 hrs</td></tr>
+
+      <tr class="section-hdr"><td colspan="4">BILLING</td></tr>
+      <tr><td>Free trial</td><td class="comp-val" style="color:#BBB;">None</td><td class="comp-val pink">30 days</td><td class="comp-val">Demo call</td></tr>
+      <tr><td>No credit card to start</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Monthly billing</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Annual billing</td><td class="comp-val">₹5,990/yr</td><td class="comp-val pink">₹9,990/yr</td><td class="comp-val">Custom</td></tr>
+      <tr><td>Grace period on payment failure</td><td class="comp-val">3 days</td><td class="comp-val pink">3 days</td><td class="comp-val">3 days</td></tr>
+      <tr><td>GST invoice</td><td class="comp-val">Auto</td><td class="comp-val pink">Auto</td><td class="comp-val">Auto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ADD-ONS -->
+<div class="addons-section">
+  <div class="addons-title">Add-ons</div>
+  <div class="addons-sub">Extend any plan with exactly what you need</div>
+  <table class="addons-table">
+    <thead>
+      <tr><th>Add-on</th><th>Price</th><th>Available on</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Extra loyalty card (standard)</td><td>₹299 / card / month</td><td>Lite, Growth</td></tr>
+      <tr><td>Custom card design <span style="color:var(--green);font-size:12px;font-weight:800;">(free during launch)</span></td><td><span class="strike">₹999</span> Free initially</td><td>All plans</td></tr>
+      <tr><td>Extra outlet — Lite</td><td>+₹599 / outlet / month</td><td>Lite</td></tr>
+      <tr><td>Extra outlet — Growth</td><td>+₹999 / outlet / month</td><td>Growth</td></tr>
+      <tr><td>Extra outlet — Pro (up to 10)</td><td>+₹799 / outlet / month</td><td>Pro</td></tr>
+      <tr><td>Extra outlet — Pro (11+)</td><td>Custom pricing</td><td>Pro</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FOOTER CTA -->
+<div class="footer-cta">
+  <h2>Start building loyal customers today</h2>
+  <p>30-day free trial on Growth. No credit card required. Setup in under 10 minutes.</p>
+  <button class="footer-cta-btn">Start Your Free Trial →</button>
+  <div class="footer-note">Already have an account? <a href="#" style="color:white;font-weight:800;">Sign in</a></div>
+</div>
+
+<script>
+// ── Billing toggle ─────────────────────────────
+let billing = 'monthly';
+
+function setBilling(mode) {
+  billing = mode;
+  document.getElementById('btn-monthly').classList.toggle('active', mode==='monthly');
+  document.getElementById('btn-annual').classList.toggle('active', mode==='annual');
+  const badge = document.getElementById('save-badge');
+  badge.classList.toggle('show', mode==='annual');
+
+  const liteM = 599, liteA = Math.round(5990/12);
+  const growthM = 999, growthA = Math.round(9990/12);
+
+  document.getElementById('lite-price').textContent   = '₹' + (mode==='annual' ? liteA   : liteM);
+  document.getElementById('growth-price').textContent = '₹' + (mode==='annual' ? growthA : growthM);
+
+  document.getElementById('lite-annual-note').innerHTML = mode==='annual'
+    ? '₹5,990/yr · <span class="saving">2 months free</span>' : '&nbsp;';
+  document.getElementById('growth-annual-note').innerHTML = mode==='annual'
+    ? '₹9,990/yr · <span class="saving">2 months free</span>' : '&nbsp;';
+
+  updateCalc();
+}
+
+// ── Calculator ─────────────────────────────────
+let outlets = 1, cards = 1;
+
+function change(field, delta) {
+  if (field === 'outlets') { outlets = Math.max(1, Math.min(15, outlets + delta)); document.getElementById('outlets-val').textContent = outlets; }
+  if (field === 'cards')   { cards   = Math.max(1, Math.min(10, cards   + delta)); document.getElementById('cards-val').textContent   = cards; }
+  updateCalc();
+}
+
+function fmt(n) { return '₹' + n.toLocaleString('en-IN'); }
+
+function updateCalc() {
+  const ann = billing === 'annual';
+
+  // LITE (1 card included, +₹299 each, max 3 outlets total, +₹599 per extra outlet)
+  const liteBase    = ann ? Math.round(5990/12) : 599;
+  const liteExtraO  = Math.min(Math.max(outlets - 1, 0), 2); // max 3 total
+  const liteExtraC  = Math.min(Math.max(cards - 1, 0), 2);   // max 3 total
+  const liteLimited = outlets > 3 || cards > 3;
+  const liteTotal   = liteBase + liteExtraO * 599 + liteExtraC * 299;
+  const liteNote    = liteLimited
+    ? (outlets > 3 ? 'Exceeds 3-outlet limit on Lite' : 'Exceeds 3-card limit on Lite')
+    : buildBreak(liteBase, liteExtraO, 599, liteExtraC, 299);
+
+  // GROWTH (3 cards included, +₹299 each, unlimited outlets +₹999)
+  const growthBase   = ann ? Math.round(9990/12) : 999;
+  const growthExtraO = Math.max(outlets - 1, 0);
+  const growthExtraC = Math.max(cards - 3, 0);
+  const growthTotal  = growthBase + growthExtraO * 999 + growthExtraC * 299;
+  const growthNote   = buildBreak(growthBase, growthExtraO, 999, growthExtraC, 299);
+
+  // PRO (3 outlets included, unlimited cards, +₹799)
+  const proBase   = 2999;
+  const proExtraO = Math.max(outlets - 3, 0);
+  const proTotal  = proBase + proExtraO * 799;
+  const proNote   = buildBreak(proBase, proExtraO, 799, 0, 0);
+
+  const best = (outlets > 5 && proTotal < growthTotal) ? 'pro' : 'growth';
+
+  document.getElementById('calc-results').innerHTML = `
+    <div class="calc-plan-result">
+      <div class="calc-plan-name">Lite</div>
+      <div class="calc-plan-price">${liteLimited ? 'N/A' : fmt(liteTotal)}</div>
+      <div class="calc-plan-breakdown">${liteNote}</div>
+    </div>
+    <div class="calc-plan-result">
+      <div class="calc-plan-name">★ Growth</div>
+      <div class="calc-plan-price featured">${fmt(growthTotal)}</div>
+      <div class="calc-plan-breakdown">${growthNote}</div>
+      ${best==='growth' ? '<span class="calc-best">Best value</span>' : ''}
+    </div>
+    <div class="calc-plan-result">
+      <div class="calc-plan-name">Pro</div>
+      <div class="calc-plan-price">${fmt(proTotal)}</div>
+      <div class="calc-plan-breakdown">${proNote}</div>
+      ${best==='pro' ? '<span class="calc-best">Best value</span>' : ''}
+    </div>
+  `;
+}
+
+function buildBreak(base, extraO, rateO, extraC, rateC) {
+  const parts = ['Base: ' + fmt(base)];
+  if (extraO > 0) parts.push(extraO + ' outlet' + (extraO>1?'s':'') + ': ' + fmt(extraO * rateO));
+  if (extraC > 0) parts.push(extraC + ' card'   + (extraC>1?'s':'') + ': ' + fmt(extraC * rateC));
+  return parts.join('<br>');
+}
+
+// ── FAQ ────────────────────────────────────────
+function toggleFaq(item) {
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+// Init
+updateCalc();
+</script>
+</body>
+</html>
+

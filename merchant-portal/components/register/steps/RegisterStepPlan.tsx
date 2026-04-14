@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { useFormContext } from 'react-hook-form';
-import { toast } from 'sonner';
+import { ExternalLink } from 'lucide-react';
 import RegisterFormCard from '@/components/register/RegisterFormCard';
 import RegisterStepHeader from '@/components/register/RegisterStepHeader';
+import RegisterStepNav from '@/components/register/RegisterStepNav';
 import PlanOptionCard from '@/components/register/steps/plan/PlanOptionCard';
 import { pricing } from '@/lib/pricing';
 import type { RegisterApplicationInput } from '@/lib/schemas/register';
@@ -16,39 +18,13 @@ function parseInrAmount(value: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-declare global {
-  interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
-
-async function loadRazorpay(): Promise<void> {
-  if (typeof window === 'undefined') return;
-  if (window.Razorpay) return;
-  await new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector('script[data-razorpay="checkout"]');
-    if (existing) {
-      existing.addEventListener('load', () => resolve());
-      existing.addEventListener('error', () => reject(new Error('Unable to load payments')));
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.dataset.razorpay = 'checkout';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Unable to load payments'));
-    document.body.appendChild(script);
-  });
-}
-
 export interface RegisterStepPlanProps {
   onBack: () => void;
-  onSubmitted: () => void;
+  onNext: () => void;
 }
 
-export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPlanProps) {
-  const { watch, setValue, getValues, trigger } = useFormContext<RegisterApplicationInput>();
+export default function RegisterStepPlan({ onBack, onNext }: RegisterStepPlanProps) {
+  const { watch, setValue, trigger } = useFormContext<RegisterApplicationInput>();
   const plan = watch('plan');
   const billingCycle = watch('billingCycle') || 'MONTHLY';
 
@@ -65,74 +41,10 @@ export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPl
   const gstAmount = useMemo(() => (baseAmount == null ? null : baseAmount * 0.18), [baseAmount]);
   void gstAmount;
 
-  async function submit() {
-    const valid = await trigger();
+  async function continueToReview() {
+    const valid = await trigger(['plan', 'billingCycle']);
     if (!valid) return;
-    try {
-      const payload = getValues();
-      const res = await fetch('/api/onboarding/application', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { message?: string } | null;
-        throw new Error(body?.message || 'Submission failed');
-      }
-      const body = (await res.json().catch(() => null)) as
-        | {
-            applicationId?: string;
-            checkout?: { provider: 'RAZORPAY'; keyId: string; orderId: string; amount: number; currency: string };
-          }
-        | null;
-
-      if (body?.checkout?.provider === 'RAZORPAY' && body.applicationId) {
-        await loadRazorpay();
-        if (!window.Razorpay) throw new Error('Payments unavailable');
-
-        const options = {
-          key: body.checkout.keyId,
-          amount: body.checkout.amount,
-          currency: body.checkout.currency,
-          order_id: body.checkout.orderId,
-          name: 'Perkzio',
-          prefill: {
-            name: payload.contactName,
-            email: payload.contactEmail,
-            contact: payload.contactPhone,
-          },
-          handler: async (response: {
-            razorpay_payment_id: string;
-            razorpay_order_id: string;
-            razorpay_signature: string;
-          }) => {
-            const confirmRes = await fetch('/api/onboarding/payment/confirm', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                applicationId: body.applicationId,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-              }),
-            });
-            if (!confirmRes.ok) {
-              toast.error('Payment captured but confirmation failed');
-              return;
-            }
-            onSubmitted();
-          },
-        };
-
-        new window.Razorpay(options).open();
-        return;
-      }
-
-      onSubmitted();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Submission failed');
-    } finally {
-    }
+    onNext();
   }
 
   return (
@@ -141,11 +53,23 @@ export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPl
         stepIndex={3}
         title={
           <>
-            Choose Your <span className="text-primary">Plans</span>
+            Flexible <span className="text-primary">Plans</span> for Growth.
           </>
         }
         description="Select a plan that fits your business scale. You can always upgrade as your empire grows."
       />
+      <div className="flex w-full flex-wrap items-center justify-between gap-6">
+        <RegisterStepNav onBack={onBack} onContinue={undefined} className="justify-start" />
+        <Link
+          href="/compare-plans"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 border-b-2 border-primary/25 pb-1 text-base font-extrabold text-primary hover:border-primary"
+        >
+          Compare Plans
+          <ExternalLink className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
 
       <RegisterFormCard className="rounded-[32px] shadow-none">
         <div className="mt-8 grid gap-5 md:grid-cols-3">
@@ -165,32 +89,8 @@ export default function RegisterStepPlan({ onBack, onSubmitted }: RegisterStepPl
           ))}
         </div>
 
-        <div className="mt-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center gap-2 text-base font-extrabold text-primary hover:brightness-95"
-            aria-label="Back to Business Location & Verification"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-              <path
-                d="M15 18l-6-6 6-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Back to Business Location & Verification
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            className="h-14 rounded-full bg-gradient-to-r from-primary to-[#E91E8C] px-12 text-lg font-extrabold text-white shadow-[0_15px_30px_-8px_rgba(241,30,105,0.45)] hover:brightness-95"
-          >
-            Submit application
-          </button>
+        <div className="mt-10 flex justify-center">
+          <RegisterStepNav onBack={undefined} onContinue={continueToReview} />
         </div>
       </RegisterFormCard>
     </div>

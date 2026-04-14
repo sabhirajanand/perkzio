@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils/cn';
 
 export interface RegisterStepHeaderProps {
-  stepIndex: 1 | 2 | 3 | 4;
+  stepIndex: 1 | 2 | 3 | 4 | 5;
   totalSteps?: number;
   title: React.ReactNode;
   description: string;
@@ -9,11 +9,11 @@ export interface RegisterStepHeaderProps {
 
 export default function RegisterStepHeader({
   stepIndex,
-  totalSteps = 4,
+  totalSteps = 5,
   title,
   description,
 }: RegisterStepHeaderProps) {
-  const stepLabel = `Step ${String(stepIndex).padStart(2, '0')}`;
+  const stepLabel = `STEP ${String(stepIndex).padStart(2, '0')}`;
   const totalLabel = String(totalSteps).padStart(2, '0');
 
   return (
@@ -24,19 +24,17 @@ export default function RegisterStepHeader({
           <span className="h-px w-8 shrink-0 bg-[#323534]" aria-hidden />
           <span className="text-sm font-bold uppercase tracking-[0.1em] text-[#323534]">{totalLabel}</span>
         </div>
-        {stepIndex <= 3 ? (
-          <div className="flex shrink-0 items-center gap-2" role="presentation" aria-label="Registration progress">
-            {Array.from({ length: totalSteps }, (_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  'h-2 w-10 shrink-0 rounded-full transition-colors',
-                  i === stepIndex - 1 ? 'bg-primary' : 'bg-[#323534]',
-                )}
-              />
-            ))}
-          </div>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2" role="presentation" aria-label="Registration progress">
+          {Array.from({ length: totalSteps }, (_, i) => (
+            <span
+              key={i}
+              className={cn(
+                'h-2 w-10 shrink-0 rounded-full transition-colors',
+                i === stepIndex - 1 ? 'bg-primary' : 'bg-[#323534]',
+              )}
+            />
+          ))}
+        </div>
       </div>
       <h1 className="text-5xl font-extrabold leading-none tracking-tight text-black [font-family:var(--font-register-display),ui-serif,Georgia,serif] md:text-[56px] md:leading-[56px]">
         {title}

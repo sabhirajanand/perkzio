@@ -23,7 +23,14 @@ export default function RegisterAside() {
 
       <div className="relative z-10 min-h-[81px] min-w-[280px]">
         <div className="relative h-[81px] min-w-[280px] max-w-[324px]">
-          <Image src="/Images/logo.png" alt="Perkzio" fill className="object-contain object-left" priority />
+          <Image
+            src="/Images/logo.png"
+            alt="Perkzio"
+            fill
+            className="object-contain object-left"
+            priority
+            sizes="(min-width: 1024px) 324px, 280px"
+          />
         </div>
       </div>
 

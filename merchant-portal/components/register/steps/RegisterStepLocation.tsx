@@ -1,24 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { toast } from 'sonner';
-import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
 import Label from '@/components/ui/label';
 import RegisterFormCard from '@/components/register/RegisterFormCard';
 import RegisterStepHeader from '@/components/register/RegisterStepHeader';
-import DocUpload, { type DocUploadSlot } from '@/components/register/steps/location/DocUpload';
+import RegisterStepNav from '@/components/register/RegisterStepNav';
+import ImageUpload from '@/components/register/steps/location/ImageUpload';
+import MapPicker from '@/components/register/steps/location/MapPicker';
+import { Image as GalleryIcon } from 'lucide-react';
 import {
-  BoltIcon,
-  CameraIcon,
+  ComplianceIcon,
   ClockIcon,
   CloudUploadIcon,
-  ComplianceIcon,
-  DocumentIcon,
-  IdCardIcon,
   LocationPinIcon,
-  TargetIcon,
   WebIcon,
 } from '@/components/register/steps/location/Icons';
 import OperatingHoursCard from '@/components/register/steps/location/OperatingHoursCard';
@@ -37,124 +33,109 @@ const fieldShell =
 const selectClass =
   'h-[60px] w-full appearance-none rounded-[10px] border-0 bg-[#F3F4F6] px-5 pr-10 text-base text-zinc-900 outline-none focus:bg-zinc-50 focus:ring-2 focus:ring-primary/30';
 
-const DOC_SLOTS: DocUploadSlot[] = [
-  {
-    name: 'gstCertFileName',
-    title: 'GST certificate',
-    hint: 'Alternative for GST-exempt small businesses',
-    icon: <CloudUploadIcon className="h-6 w-6" />,
-  },
-  {
-    name: 'panCardFileName',
-    title: 'Business PAN card',
-    hint: 'Business PAN card uploaded for identity',
-    icon: <IdCardIcon className="h-6 w-6" />,
-  },
-  {
-    name: 'addressProofFileName',
-    title: 'Address proof',
-    hint: 'Address proof uploaded for verification',
-    icon: <DocumentIcon className="h-6 w-6" />,
-  },
-  {
-    name: 'shopPhotoFileName',
-    title: 'Shop photo',
-    hint: 'Exterior photo to verify your outlet',
-    icon: <CameraIcon className="h-6 w-6" />,
-  },
-];
-
 const LOCATION_FIELDS: (keyof RegisterApplicationInput)[] = [
   'addressLine1',
   'city',
   'state',
   'pinCode',
   'mapsUrl',
+  'insideViewFileName',
+  'outsideViewFileName',
+  'logoFileName',
 ];
 
 export interface RegisterStepLocationProps {
   onNext: () => void;
   onBack: () => void;
+  selectedFiles: {
+    inside?: File;
+    outside?: File;
+    logo?: File;
+  };
+  onSelectedFilesChange: (next: { inside?: File; outside?: File; logo?: File }) => void;
 }
 
-export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLocationProps) {
+export default function RegisterStepLocation({
+  onNext,
+  onBack,
+  selectedFiles,
+  onSelectedFilesChange,
+}: RegisterStepLocationProps) {
   const form = useFormContext<RegisterApplicationInput>();
-  const pan = form.watch('pan');
   const mapsUrl = form.watch('mapsUrl');
+  const insideViewUrl = form.watch('insideViewUrl');
+  const outsideViewUrl = form.watch('outsideViewUrl');
+  const logoUrl = form.watch('logoUrl');
+  const insideViewFileName = form.watch('insideViewFileName');
+  const outsideViewFileName = form.watch('outsideViewFileName');
+  const logoFileName = form.watch('logoFileName');
   const [uploads, setUploads] = useState<UploadQueueItem[]>([]);
+  const [resolvedMapsUrl, setResolvedMapsUrl] = useState<string>('');
+  const [mapsEmbedUrl, setMapsEmbedUrl] = useState<string>('');
 
   async function continueLocation() {
     const ok = await form.trigger(LOCATION_FIELDS);
     if (ok) onNext();
   }
 
-  function bindFile(field: (typeof DOC_SLOTS)[number]['name']) {
-    return async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const f = e.target.files?.[0];
-      form.setValue(field, f?.name ?? '', { shouldValidate: true });
-      if (!f) return;
+  const mapsResolveKey = useMemo(() => mapsUrl?.trim() || '', [mapsUrl]);
 
-      const docType =
-        field === 'gstCertFileName'
-          ? 'GST_CERT'
-          : field === 'panCardFileName'
-            ? 'PAN_CARD'
-            : field === 'addressProofFileName'
-              ? 'ADDRESS_PROOF'
-              : 'SHOP_PHOTO';
-      const uploadKeyField =
-        field === 'gstCertFileName'
-          ? 'gstCertUploadKey'
-          : field === 'panCardFileName'
-            ? 'panCardUploadKey'
-            : field === 'addressProofFileName'
-              ? 'addressProofUploadKey'
-              : 'shopPhotoUploadKey';
+  useEffect(() => {
+    if (!mapsResolveKey) return;
 
-      const id = `${String(field)}:${f.name}`;
-      setUploads((prev) => [{ id, fileName: f.name, progress: 5 }, ...prev.filter((p) => p.id !== id)]);
-
+    const t = window.setTimeout(async () => {
       try {
-        setUploads((prev) => prev.map((p) => (p.id === id ? { ...p, progress: 15 } : p)));
-        const presignRes = await fetch('/api/kyc/presign', {
+        const res = await fetch('/api/maps/resolve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            otpChallengeId: '00000000-0000-0000-0000-000000000000',
-            documentType: docType,
-            fileName: f.name,
-            contentType: f.type || 'application/octet-stream',
-            sizeBytes: f.size,
-          }),
+          body: JSON.stringify({ url: mapsResolveKey }),
         });
-        if (!presignRes.ok) throw new Error('Unable to upload document');
-        const presignBody = (await presignRes.json()) as { uploadUrl?: string; s3Key?: string };
-        if (!presignBody.uploadUrl || !presignBody.s3Key) throw new Error('Unable to upload document');
+        const body = (await res.json().catch(() => null)) as { resolvedUrl?: string } | { message?: string } | null;
+        if (!res.ok || !body || typeof body !== 'object' || !('resolvedUrl' in body) || !body.resolvedUrl) {
+          setResolvedMapsUrl('');
+          setMapsEmbedUrl('');
+          return;
+        }
 
-        setUploads((prev) => prev.map((p) => (p.id === id ? { ...p, progress: 40 } : p)));
-        const putRes = await fetch(presignBody.uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': f.type || 'application/octet-stream' },
-          body: f,
-        });
-        if (!putRes.ok) throw new Error('Upload failed');
+        const resolved = String(body.resolvedUrl);
+        setResolvedMapsUrl(resolved);
 
-        form.setValue(uploadKeyField, presignBody.s3Key, { shouldValidate: true });
-        setUploads((prev) => prev.map((p) => (p.id === id ? { ...p, progress: 100 } : p)));
-        toast.success('Document uploaded');
-      } catch (err) {
-        setUploads((prev) => prev.map((p) => (p.id === id ? { ...p, progress: 0 } : p)));
-        toast.error(err instanceof Error ? err.message : 'Upload failed');
+        // Best-effort embed URL generation:
+        // - If we can extract @lat,lng from the resolved maps URL, use q=lat,lng with output=embed
+        // - Otherwise, try adding output=embed to the resolved Google Maps URL
+        const coordMatch = resolved.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+        if (coordMatch) {
+          const lat = coordMatch[1];
+          const lng = coordMatch[2];
+          setMapsEmbedUrl(`https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}&z=16&output=embed`);
+          return;
+        }
+
+        try {
+          const u = new URL(resolved);
+          if (u.hostname.includes('google.') && u.pathname.includes('/maps')) {
+            u.searchParams.set('output', 'embed');
+            setMapsEmbedUrl(u.toString());
+            return;
+          }
+        } catch {
+          // ignore
+        }
+
+        setMapsEmbedUrl('');
+      } catch {
+        setResolvedMapsUrl('');
+        setMapsEmbedUrl('');
       }
-    };
-  }
+    }, 450);
 
-  function validateMaps() {
-    form.trigger('mapsUrl').then((ok) => {
-      if (ok) toast.success('Maps link looks valid.');
-      else toast.error('Enter a valid Google Maps URL.');
-    });
-  }
+    return () => window.clearTimeout(t);
+  }, [mapsResolveKey]);
+
+  // kept for future if we need link-resolution again
+  void mapsResolveKey;
+  void resolvedMapsUrl;
+  void mapsEmbedUrl;
 
   return (
     <div className="space-y-[30px]">
@@ -167,6 +148,7 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
         }
         description="Verify your registered address and upload the documents we need to activate payouts and stay compliant."
       />
+      <RegisterStepNav onBack={onBack} onContinue={undefined} className="justify-start" />
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <div className="space-y-6">
@@ -177,6 +159,20 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
                 <h2 className="text-[20px] font-bold leading-7 text-black">Registered Address</h2>
               </div>
               <div className="grid gap-6 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <MapPicker
+                    value={mapsUrl}
+                    onValueChange={(v) => form.setValue('mapsUrl', v, { shouldValidate: true })}
+                    onResolvedAddress={(a) => {
+                      form.setValue('addressLine1', a.formattedAddress, { shouldValidate: true });
+                      form.setValue('city', a.city, { shouldValidate: true });
+                      form.setValue('state', a.state, { shouldValidate: true });
+                      if (a.pinCode) form.setValue('pinCode', a.pinCode, { shouldValidate: true });
+                    }}
+                    label="Set location on map"
+                  />
+                  {errorText(form.formState.errors.mapsUrl?.message)}
+                </div>
                 <div className="md:col-span-2">
                   <Label htmlFor="addressLine1">Registered Business Address *</Label>
                   <Input
@@ -210,50 +206,6 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
                   <Input id="pinCode" placeholder="400001" {...form.register('pinCode')} />
                   {errorText(form.formState.errors.pinCode?.message)}
                 </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="mapsUrl">Google Maps Place Link *</Label>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                    <Input
-                      id="mapsUrl"
-                      placeholder="https://maps.google.com/..."
-                      {...form.register('mapsUrl')}
-                    />
-                    <Button
-                      type="button"
-                      className="h-[60px] shrink-0 !rounded-[12px] bg-primary px-8 text-white hover:bg-primary/90"
-                      onClick={validateMaps}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <BoltIcon className="h-4 w-4" />
-                        Validate
-                      </span>
-                    </Button>
-                  </div>
-                  {errorText(form.formState.errors.mapsUrl?.message)}
-                  {mapsUrl ? (
-                    <div className="mt-5 overflow-hidden rounded-[24px] bg-[#E5E7EB]">
-                      <div className="relative h-[190px] w-full bg-gradient-to-br from-black/30 via-black/10 to-black/30">
-                        <div className="absolute inset-0 opacity-60">
-                          <div className="absolute left-[18%] top-[32%] h-10 w-10 rounded-full bg-white/20" />
-                          <div className="absolute left-[64%] top-[28%] h-8 w-8 rounded-full bg-white/20" />
-                          <div className="absolute left-[48%] top-[58%] h-7 w-7 rounded-full bg-white/15" />
-                        </div>
-                        <div className="absolute bottom-4 left-4">
-                          <Button
-                            type="button"
-                            onClick={() => window.open(mapsUrl, '_blank', 'noopener,noreferrer')}
-                            className="h-10 rounded-full bg-black/70 px-4 text-xs font-bold uppercase tracking-[0.12em] text-white hover:bg-black/80"
-                          >
-                            <span className="inline-flex items-center gap-2">
-                              <TargetIcon className="h-4 w-4" />
-                              Preview Location
-                            </span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
               </div>
             </section>
           </RegisterFormCard>
@@ -271,20 +223,96 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
           <RegisterFormCard className="rounded-[24px] shadow-none">
             <section className="space-y-4">
               <div className="flex items-center gap-3">
-                <ComplianceIcon className="h-5 w-5 text-black" />
-                <h2 className="text-[20px] font-bold leading-7 text-black">Compliance Documents</h2>
+                <CloudUploadIcon className="h-6 w-6 text-black" />
+                <h2 className="text-[20px] font-bold leading-7 text-black">Upload your logo and photos</h2>
               </div>
-              <p className="text-sm text-zinc-600">
-                Business PAN on file: <span className="font-semibold text-zinc-900">{pan || '—'}</span>
-              </p>
               <div className="grid gap-4 sm:grid-cols-2">
-                {DOC_SLOTS.map((slot) => (
-                  <DocUpload key={slot.name} slot={slot} onFile={bindFile(slot.name)} />
-                ))}
+                <ImageUpload
+                  title="Inside view"
+                  description="Inside view of the outlet showing business setup and working area."
+                  icon={<CloudUploadIcon />}
+                  kind="inside"
+                  deferUpload
+                  onSelectedFile={(file) => onSelectedFilesChange({ ...selectedFiles, inside: file })}
+                  valueUrl={insideViewUrl || ''}
+                  fileName={insideViewFileName}
+                  onProgress={(item) =>
+                    setUploads((prev) => [
+                      item,
+                      ...prev.filter((p) => p.id !== item.id),
+                    ])
+                  }
+                  onUploaded={({ fileName }) => {
+                    form.setValue('insideViewFileName', fileName, { shouldValidate: true });
+                    form.setValue('insideViewUrl', '', { shouldValidate: true });
+                  }}
+                />
+                <ImageUpload
+                  title="Outside view"
+                  description="Exterior photo of the shop provided to verify business premises."
+                  icon={<ComplianceIcon />}
+                  kind="outside"
+                  deferUpload
+                  onSelectedFile={(file) => onSelectedFilesChange({ ...selectedFiles, outside: file })}
+                  valueUrl={outsideViewUrl || ''}
+                  fileName={outsideViewFileName}
+                  onProgress={(item) =>
+                    setUploads((prev) => [
+                      item,
+                      ...prev.filter((p) => p.id !== item.id),
+                    ])
+                  }
+                  onUploaded={({ fileName }) => {
+                    form.setValue('outsideViewFileName', fileName, { shouldValidate: true });
+                    form.setValue('outsideViewUrl', '', { shouldValidate: true });
+                  }}
+                />
+              </div>
+              <div className="grid gap-4">
+                <ImageUpload
+                  title="Logo upload"
+                  description="Upload your brand logo for the portal and customer-facing pages."
+                  icon={<GalleryIcon />}
+                  kind="logo"
+                  variant="flat"
+                  showAction={false}
+                  deferUpload
+                  onSelectedFile={(file) => onSelectedFilesChange({ ...selectedFiles, logo: file })}
+                  valueUrl={logoUrl || ''}
+                  fileName={logoFileName}
+                  onProgress={(item) =>
+                    setUploads((prev) => [
+                      item,
+                      ...prev.filter((p) => p.id !== item.id),
+                    ])
+                  }
+                  onUploaded={({ fileName }) => {
+                    form.setValue('logoFileName', fileName, { shouldValidate: true });
+                    form.setValue('logoUrl', '', { shouldValidate: true });
+                  }}
+                />
               </div>
               <UploadQueue
                 items={uploads}
-                onRemove={(id) => setUploads((prev) => prev.filter((p) => p.id !== id))}
+                onRemove={(id) => {
+                  const kind = id.split(':')[0] as 'inside' | 'outside' | 'logo';
+                  if (kind === 'inside') {
+                    form.setValue('insideViewUrl', '', { shouldValidate: true });
+                    form.setValue('insideViewFileName', '', { shouldValidate: true });
+                    onSelectedFilesChange({ ...selectedFiles, inside: undefined });
+                  }
+                  if (kind === 'outside') {
+                    form.setValue('outsideViewUrl', '', { shouldValidate: true });
+                    form.setValue('outsideViewFileName', '', { shouldValidate: true });
+                    onSelectedFilesChange({ ...selectedFiles, outside: undefined });
+                  }
+                  if (kind === 'logo') {
+                    form.setValue('logoUrl', '', { shouldValidate: true });
+                    form.setValue('logoFileName', '', { shouldValidate: true });
+                    onSelectedFilesChange({ ...selectedFiles, logo: undefined });
+                  }
+                  setUploads((prev) => prev.filter((p) => p.id !== id));
+                }}
               />
             </section>
           </RegisterFormCard>
@@ -305,7 +333,7 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
                   <Label htmlFor="googleBusinessUrl">Google Link</Label>
                   <Input
                     id="googleBusinessUrl"
-                    placeholder="Google Business profile URL"
+                    placeholder="@Google"
                     {...form.register('googleBusinessUrl')}
                   />
                   {errorText(form.formState.errors.googleBusinessUrl?.message)}
@@ -326,36 +354,7 @@ export default function RegisterStepLocation({ onNext, onBack }: RegisterStepLoc
         </div>
       </div>
 
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-base font-extrabold text-primary hover:brightness-95"
-          aria-label="Back to Business Info"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-            <path
-              d="M15 18l-6-6 6-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          Back to Business Info
-        </button>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <Button
-            type="button"
-            size="lg"
-            className="h-14 rounded-full bg-gradient-to-r from-primary to-[#E91E8C] px-12 text-lg font-extrabold shadow-[0_15px_30px_-8px_rgba(241,30,105,0.45)] hover:brightness-95"
-            onClick={continueLocation}
-          >
-            Continue to Step 3
-          </Button>
-        </div>
-      </div>
+      <RegisterStepNav onContinue={continueLocation} />
     </div>
   );
 }

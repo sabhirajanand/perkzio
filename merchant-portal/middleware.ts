@@ -15,13 +15,36 @@ const PROTECTED_PREFIXES = [
   '/billing',
 ];
 
+const UNLOCKED_PREFIXES = ['/dashboard', '/settings'];
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (!isProtected) return NextResponse.next();
 
   const hasSession = Boolean(req.cookies.get('mp_session')?.value);
-  if (hasSession) return NextResponse.next();
+  if (hasSession) {
+    const token = req.cookies.get('mp_session')?.value ?? '';
+    if (UNLOCKED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+      return NextResponse.next();
+    }
+    // If merchant isn't approved yet, lock everything except dashboard + settings.
+    return fetch(new URL('/v1/merchant/me', process.env.API_BASE_URL ?? 'http://localhost:4000').toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (r) => {
+        const json = await r.json().catch(() => null);
+        const status =
+          json && typeof json === 'object' && 'merchant' in (json as object)
+            ? String(((json as { merchant?: { status?: unknown } }).merchant?.status ?? ''))
+            : '';
+        if (status === 'ACTIVE') return NextResponse.next();
+        const url = req.nextUrl.clone();
+        url.pathname = '/dashboard';
+        return NextResponse.redirect(url);
+      })
+      .catch(() => NextResponse.next());
+  }
 
   const url = req.nextUrl.clone();
   url.pathname = '/login';

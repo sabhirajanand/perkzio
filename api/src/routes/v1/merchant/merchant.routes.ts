@@ -5,7 +5,9 @@ import { getDashboardSummary } from '../../../controllers/v1/merchant/dashboard/
 import { getCustomer, listCustomers } from '../../../controllers/v1/merchant/customers/merchantCustomers.controller.js';
 import { createOffer, getOffer, listOffers, updateOffer } from '../../../controllers/v1/merchant/offers/merchantOffers.controller.js';
 import { presignKycUpload } from '../../../controllers/v1/merchant/kyc/merchantKycUpload.controller.js';
+import { merchantMe } from '../../../controllers/v1/merchant/me/merchantMe.controller.js';
 import { submitMerchantOnboardingApplication } from '../../../controllers/v1/merchant/onboarding/merchantOnboarding.controller.js';
+import { checkBusinessEmailUnique } from '../../../controllers/v1/merchant/onboarding/merchantOnboardingEmail.controller.js';
 import { sendOtp, verifyOtp } from '../../../controllers/v1/merchant/otp/merchantOtp.controller.js';
 import { merchantAuthMiddleware } from '../../../middleware/merchantAuth.js';
 import { asyncHandler } from '../../../lib/http/asyncHandler.js';
@@ -17,9 +19,11 @@ export function registerMerchantRoutes(app: Express): void {
   app.post('/v1/otp/send', asyncHandler(sendOtp));
   app.post('/v1/otp/verify', asyncHandler(verifyOtp));
   app.post('/v1/kyc/presign', asyncHandler(presignKycUpload));
+  app.post('/v1/onboarding/check-email', asyncHandler(checkBusinessEmailUnique));
   app.post('/v1/onboarding/application', asyncHandler(submitMerchantOnboardingApplication));
   app.post('/v1/onboarding/payment/confirm', asyncHandler(confirmOnboardingPayment));
 
+  app.get('/v1/merchant/me', merchantAuthMiddleware, asyncHandler(merchantMe));
   app.get('/v1/merchant/dashboard/summary', merchantAuthMiddleware, asyncHandler(getDashboardSummary));
   app.get('/v1/merchant/customers', merchantAuthMiddleware, asyncHandler(listCustomers));
   app.get('/v1/merchant/customers/:customerId', merchantAuthMiddleware, asyncHandler(getCustomer));

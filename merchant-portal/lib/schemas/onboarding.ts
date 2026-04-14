@@ -6,9 +6,8 @@ export const onboardingApplicationSchema = z.object({
   contactEmail: z.string().email(),
   contactPhone: z
     .string()
-    .min(10)
-    .max(15)
-    .regex(/^[0-9+ -]+$/, 'Invalid phone number'),
+    .trim()
+    .regex(/^[0-9]{10}$/, 'Please enter a valid mobile number.'),
   outletsCount: z.preprocess(
     (v) => (typeof v === 'string' || typeof v === 'number' ? Number(v) : v),
     z.number().int().min(1).max(200),
