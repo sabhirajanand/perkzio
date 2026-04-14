@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { toast } from 'sonner';
+import { PencilLine } from 'lucide-react';
 
 import RegisterFormCard from '@/components/register/RegisterFormCard';
 import RegisterStepHeader from '@/components/register/RegisterStepHeader';
@@ -31,6 +32,33 @@ function Row({ label, value }: { label: string; value?: string | null }) {
       <p className="text-sm font-semibold text-zinc-700">{label}</p>
       <p className="text-sm font-semibold text-zinc-900">{value ? value : '—'}</p>
     </div>
+  );
+}
+
+function RowIf({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
+  return <Row label={label} value={value} />;
+}
+
+function EditAction({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:opacity-90 disabled:opacity-60"
+    >
+      {label}
+      <PencilLine className="h-4 w-4" aria-hidden />
+    </button>
   );
 }
 
@@ -164,14 +192,7 @@ export default function RegisterStepReview({ onBack, onEditStep, onSubmitted, se
           <div className="rounded-2xl border border-black/5 bg-white px-6 py-6">
             <div className="flex items-center justify-between gap-4">
               <p className="text-[18px] font-extrabold leading-7 text-black">Business Information</p>
-              <button
-                type="button"
-                onClick={() => onEditStep(1)}
-                disabled={isSubmitting}
-                className="text-base font-extrabold text-primary underline underline-offset-4 disabled:opacity-60"
-              >
-                Edit
-              </button>
+              <EditAction label="Edit" onClick={() => onEditStep(1)} disabled={isSubmitting} />
             </div>
             <div className="mt-4">
               <Row label="BUSINESS NAME" value={v.businessName} />
@@ -179,8 +200,6 @@ export default function RegisterStepReview({ onBack, onEditStep, onSubmitted, se
               <Row label="Contact Person" value={v.contactName} />
               <Row label="CONTACT EMAIL" value={v.contactEmail} />
               <Row label="MOBILE NUMBER" value={v.contactPhone ? `+91 ${v.contactPhone}` : ''} />
-              <Row label="PAN" value={v.pan} />
-              <Row label="GSTIN" value={v.gstin} />
               <Row label="Outlets" value={String(v.outletsCount ?? '')} />
             </div>
           </div>
@@ -188,14 +207,7 @@ export default function RegisterStepReview({ onBack, onEditStep, onSubmitted, se
           <div className="rounded-2xl border border-black/5 bg-white px-6 py-6">
             <div className="flex items-center justify-between gap-4">
               <p className="text-[18px] font-extrabold leading-7 text-black">Business Location &amp; Verification</p>
-              <button
-                type="button"
-                onClick={() => onEditStep(2)}
-                disabled={isSubmitting}
-                className="text-base font-extrabold text-primary underline underline-offset-4 disabled:opacity-60"
-              >
-                Edit
-              </button>
+              <EditAction label="Edit" onClick={() => onEditStep(2)} disabled={isSubmitting} />
             </div>
             <div className="mt-4">
               <Row label="Registered Business Address" value={v.addressLine1} />
@@ -203,27 +215,16 @@ export default function RegisterStepReview({ onBack, onEditStep, onSubmitted, se
               <Row label="State" value={v.state} />
               <Row label="PIN Code" value={v.pinCode} />
               <Row label="Set location on map" value={v.mapsUrl} />
-              <Row label="Inside view" value={v.insideViewFileName} />
-              <Row label="Outside view" value={v.outsideViewFileName} />
-              <Row label="Logo" value={v.logoFileName} />
-              <Row label="GST Certificate" value={v.gstCertFileName} />
-              <Row label="PAN Card" value={v.panCardFileName} />
-              <Row label="Address Proof" value={v.addressProofFileName} />
-              <Row label="Shop Photo" value={v.shopPhotoFileName} />
+              <RowIf label="Inside view" value={v.insideViewFileName} />
+              <RowIf label="Outside view" value={v.outsideViewFileName} />
+              <RowIf label="Logo" value={v.logoFileName} />
             </div>
           </div>
 
           <div className="rounded-2xl border border-black/5 bg-white px-6 py-6">
             <div className="flex items-center justify-between gap-4">
               <p className="text-[18px] font-extrabold leading-7 text-black">Selected Plan</p>
-              <button
-                type="button"
-                onClick={() => onEditStep(3)}
-                disabled={isSubmitting}
-                className="text-base font-extrabold text-primary underline underline-offset-4 disabled:opacity-60"
-              >
-                Change Plan
-              </button>
+              <EditAction label="Change Plan" onClick={() => onEditStep(3)} disabled={isSubmitting} />
             </div>
             <div className="mt-4">
               <Row label="Plan" value={selectedPlan?.title ?? v.plan} />

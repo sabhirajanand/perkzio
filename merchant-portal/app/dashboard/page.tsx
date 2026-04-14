@@ -1,4 +1,5 @@
 import KpiStrip from '@/components/dashboard/KpiStrip';
+import EmailVerifyBanner from '@/components/dashboard/EmailVerifyBanner';
 import SimpleBarChart from '@/components/dashboard/charts/SimpleBarChart';
 import StampsLineChart from '@/components/dashboard/charts/StampsLineChart';
 import Card from '@/components/ui/card';
@@ -50,6 +51,8 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      <EmailVerifyBanner />
 
       <KpiStrip items={[...kpis]} />
 

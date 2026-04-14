@@ -29,22 +29,6 @@ export default function RegisterStepSuccess() {
       />
 
       <div className="relative z-10 mx-auto w-full max-w-[920px] text-center">
-        <button
-          type="button"
-          aria-label="Close"
-          className="absolute -top-10 right-0 grid h-10 w-10 place-items-center rounded-full bg-white/70 text-zinc-400 ring-1 ring-black/5 transition-colors hover:text-zinc-600"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-            <path
-              d="M18 6L6 18M6 6l12 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-
         <h1 className="text-2xl font-bold leading-tight text-[#011D35] md:text-3xl md:leading-[48px] [font-family:var(--font-register-display),ui-serif,Georgia,serif]">
           Application Successfully Submitted!
         </h1>

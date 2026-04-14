@@ -3,14 +3,14 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import SidebarNav from '@/components/dashboard/SidebarNav';
-import Button from '@/components/ui/button';
+import TopNavBar from '@/components/dashboard/TopNavBar';
 
 export interface AppShellProps {
   title?: string;
   children: ReactNode;
 }
 
-export default function AppShell({ title = 'Dashboard', children }: AppShellProps) {
+export default function AppShell({ children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       <div className="flex min-h-screen">
@@ -26,24 +26,7 @@ export default function AppShell({ title = 'Dashboard', children }: AppShellProp
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-10 border-b border-black/5 bg-white/80 backdrop-blur">
-            <div className="mx-auto flex max-w-[1024px] items-center justify-between gap-4 px-8 py-5">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="md:hidden">
-                  <Link href="/dashboard" className="inline-flex">
-                    <Image src="/Images logo.png" alt="Perkzio" width={170} height={48} priority className="h-auto w-[170px]" />
-                  </Link>
-                </div>
-                <span className="hidden text-sm font-semibold text-zinc-700 md:inline">{title}</span>
-              </div>
-
-              <form action="/api/auth/logout" method="post">
-                <Button type="submit" variant="outline">
-                  Logout
-                </Button>
-              </form>
-            </div>
-          </header>
+          <TopNavBar />
 
           <main className="mx-auto w-full max-w-[1024px] px-8 pb-12 pt-12">{children}</main>
         </div>

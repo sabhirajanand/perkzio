@@ -61,7 +61,7 @@ export default async function MerchantRegistrationsPage() {
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <Link
                         href={`/merchants/registrations/${a.id}`}
-                        className="rounded-full bg-white px-4 py-2 text-xs font-bold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50"
+                        className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50"
                       >
                         View
                       </Link>
@@ -70,8 +70,8 @@ export default async function MerchantRegistrationsPage() {
                         aria-disabled={!canEdit}
                         className={
                           canEdit
-                            ? 'rounded-full bg-white px-4 py-2 text-xs font-bold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50'
-                            : 'pointer-events-none rounded-full bg-white px-4 py-2 text-xs font-bold text-zinc-400 ring-1 ring-black/5 opacity-60'
+                            ? 'rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50'
+                            : 'pointer-events-none rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-400 ring-1 ring-black/5 opacity-60'
                         }
                       >
                         Edit

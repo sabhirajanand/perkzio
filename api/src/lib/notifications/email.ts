@@ -17,7 +17,6 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: true } | {
   const from = env.SMTP_FROM;
   if (!host || !from) {
     // Dev-safe fallback: do not fail flows if SMTP is not configured.
-    // eslint-disable-next-line no-console
     console.log('[email:disabled]', { to, subject: input.subject, text: input.text });
     return { ok: true };
   }

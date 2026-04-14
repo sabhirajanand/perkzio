@@ -3,26 +3,25 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { LayoutGrid, Users, CreditCard, Megaphone, Tag, Store, LifeBuoy } from 'lucide-react';
 
 import { cn } from '@/lib/utils/cn';
 
 interface NavItem {
   label: string;
   href: string;
+  icon: LucideIcon;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Customers', href: '/customers' },
-  { label: 'Offers', href: '/offers' },
-  { label: 'Loyalty cards', href: '/loyalty-cards' },
-  { label: 'Campaigns', href: '/campaigns' },
-  { label: 'Analytics', href: '/analytics' },
-  { label: 'Reports', href: '/reports' },
-  { label: 'History & logs', href: '/history' },
-  { label: 'Profile & settings', href: '/settings' },
-  { label: 'Tickets', href: '/tickets' },
-  { label: 'Subscription & billing', href: '/billing' },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+  { label: 'Customers', href: '/customers', icon: Users },
+  { label: 'Loyalty cards', href: '/loyalty-cards', icon: CreditCard },
+  { label: 'Campaigns', href: '/campaigns', icon: Megaphone },
+  { label: 'Offers', href: '/offers', icon: Tag },
+  { label: 'Branches', href: '/branches', icon: Store },
+  { label: 'Support', href: '/support', icon: LifeBuoy },
 ];
 
 export default function SidebarNav() {
@@ -51,24 +50,27 @@ export default function SidebarNav() {
 
   const visibleItems = useMemo(() => {
     if (merchantStatus === 'ACTIVE' || merchantStatus === null) return NAV_ITEMS;
-    return NAV_ITEMS.filter((i) => i.href === '/dashboard' || i.href === '/settings');
+    return NAV_ITEMS.filter((i) => i.href === '/dashboard');
   }, [merchantStatus]);
 
   return (
     <nav className="space-y-1">
       {visibleItems.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              'flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition-colors',
+              'relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors',
               isActive
-                ? 'border border-[#F11E69] bg-white text-zinc-900 shadow-[0_10px_30px_-20px_rgba(0,0,0,0.30)]'
-                : 'border border-transparent text-[#4B5563] hover:bg-zinc-50 hover:text-zinc-900',
+                ? 'bg-[#FDF2F8] text-primary'
+                : 'text-zinc-900 hover:bg-zinc-50',
             )}
           >
+            {isActive ? <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-primary" /> : null}
+            <Icon className={cn('h-5 w-5', isActive ? 'text-primary' : 'text-zinc-900')} aria-hidden />
             <span>{item.label}</span>
           </Link>
         );

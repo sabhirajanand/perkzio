@@ -35,10 +35,10 @@ export default function MerchantApplicationActions({ applicationId, disabled }: 
   return (
     <>
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button variant="secondary" onClick={() => setModal('reject')} disabled={disabled || isSubmitting}>
+        <Button size="sm" variant="secondary" onClick={() => setModal('reject')} disabled={disabled || isSubmitting}>
           Reject
         </Button>
-        <Button onClick={() => setModal('approve')} disabled={disabled || isSubmitting}>
+        <Button size="sm" onClick={() => setModal('approve')} disabled={disabled || isSubmitting}>
           Approve
         </Button>
       </div>

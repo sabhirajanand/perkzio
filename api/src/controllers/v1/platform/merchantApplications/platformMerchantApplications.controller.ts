@@ -125,8 +125,10 @@ export async function approveMerchantApplication(req: Request, res: Response): P
   application.reviewedAt = new Date();
   await appRepo.save(application);
 
+  const payload = application.businessPayload && typeof application.businessPayload === 'object' ? (application.businessPayload as Record<string, unknown>) : {};
+  const contactEmail = typeof payload.contactEmail === 'string' ? payload.contactEmail.toLowerCase() : null;
   await sendEmail({
-    to: [String((application.businessPayload as Record<string, unknown> | null)?.contactEmail ?? '').toLowerCase()].filter(Boolean),
+    to: contactEmail ? [contactEmail] : [],
     subject: `Perkzio: Application approved (${application.referenceNumber})`,
     text: `Your merchant registration has been approved.\n\nReference: ${application.referenceNumber}\n\nYour portal access has been unlocked.`,
   });

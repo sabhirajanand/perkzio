@@ -29,7 +29,8 @@ const registerApplicationSchema = z.object({
     .string()
     .trim()
     .transform((s) => s.toUpperCase())
-    .pipe(z.string().regex(panRegex, 'Invalid PAN')),
+    .optional()
+    .refine((v) => !v || panRegex.test(v), 'Invalid PAN'),
   outletsCount: z.number().int().min(1).max(200),
   gstin: z
     .string()
@@ -108,7 +109,7 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
       kycStatus: 'PENDING',
       subscriptionLimitedMode: true,
       primaryBusinessEmail: parsed.data.contactEmail.toLowerCase(),
-      pan: parsed.data.pan,
+      pan: parsed.data.pan ?? null,
       gstin: parsed.data.gstin ?? null,
       registeredAddress: {
         line1: parsed.data.addressLine1,
