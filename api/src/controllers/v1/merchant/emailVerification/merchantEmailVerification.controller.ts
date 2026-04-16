@@ -30,10 +30,6 @@ export async function sendMerchantEmailVerification(req: Request, res: Response)
   const user = await userRepo.findOne({ where: { id: userId }, relations: { merchant: true } });
   if (!user) throw new AppError(401, ErrorCodes.UNAUTHORIZED, 'Unauthorized');
 
-  if (user.merchant.status !== 'ACTIVE') {
-    throw new AppError(403, ErrorCodes.FORBIDDEN, 'Email verification is available after approval');
-  }
-
   if (user.emailVerifiedAt) {
     res.json({ ok: true, alreadyVerified: true });
     return;
@@ -91,10 +87,6 @@ export async function verifyMerchantEmailVerification(req: Request, res: Respons
   const userRepo = getDataSource().getRepository(MerchantUser);
   const user = await userRepo.findOne({ where: { id: userId }, relations: { merchant: true } });
   if (!user) throw new AppError(401, ErrorCodes.UNAUTHORIZED, 'Unauthorized');
-
-  if (user.merchant.status !== 'ACTIVE') {
-    throw new AppError(403, ErrorCodes.FORBIDDEN, 'Email verification is available after approval');
-  }
 
   const repo = getDataSource().getRepository(OtpChallenge);
   const challenge = await repo.findOne({ where: { id: parsed.data.challengeId } });

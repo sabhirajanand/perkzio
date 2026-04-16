@@ -4,49 +4,36 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Search, Settings, SwitchCamera, ChevronDown, LogOut } from 'lucide-react';
-
-import Button from '@/components/ui/button';
-import { cn } from '@/lib/utils/cn';
+import { Bell, ChevronDown, LogOut } from 'lucide-react';
 
 type MerchantMeResponse =
   | { ok: true; user?: { email?: string | null }; merchant?: { primaryBusinessEmail?: string | null } }
   | { ok?: false; message?: string };
 
-function TopTab({ href, label }: { href: string; label: string }) {
-  const pathname = usePathname();
-  const isActive = pathname === href || pathname.startsWith(`${href}/`);
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'relative px-2 py-1 text-sm font-semibold text-zinc-700 hover:text-zinc-900',
-        isActive ? 'text-primary' : '',
-      )}
-    >
-      {label}
-      {isActive ? <span className="absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-primary" /> : null}
-    </Link>
-  );
+function segmentLabel(segment: string): string {
+  if (!segment) return '';
+  const map: Record<string, string> = {
+    dashboard: 'Dashboard',
+    customers: 'Customers',
+    'loyalty-cards': 'Loyalty cards',
+    campaigns: 'Campaigns',
+    offers: 'Offers',
+    branches: 'Branches',
+    support: 'Support',
+    settings: 'Profile & settings',
+  };
+  if (segment in map) return map[segment]!;
+  return segment.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default function TopNavBar() {
+  const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
   const [email, setEmail] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
     return window.sessionStorage.getItem('mp_profile_email') ?? '';
   });
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const initials = useMemo(() => {
-    const e = email.trim();
-    if (!e) return 'MP';
-    const beforeAt = e.split('@')[0] ?? '';
-    const parts = beforeAt.split(/[._-]+/g).filter(Boolean);
-    const a = parts[0]?.[0] ?? beforeAt[0] ?? 'M';
-    const b = parts[1]?.[0] ?? beforeAt[1] ?? 'P';
-    return `${a}${b}`.toUpperCase();
-  }, [email]);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,88 +72,87 @@ export default function TopNavBar() {
     return () => document.removeEventListener('mousedown', onDocDown);
   }, [profileOpen]);
 
+  const breadcrumbs = useMemo(() => {
+    const clean = (pathname || '/').split('?')[0]!.split('#')[0]!;
+    const parts = clean.split('/').filter(Boolean);
+    const crumbs: Array<{ label: string; href: string }> = [];
+    let acc = '';
+    for (const p of parts) {
+      acc += `/${p}`;
+      crumbs.push({ label: segmentLabel(p), href: acc });
+    }
+    return crumbs.length ? crumbs : [{ label: 'Dashboard', href: '/dashboard' }];
+  }, [pathname]);
+
+  const title = breadcrumbs[breadcrumbs.length - 1]?.label ?? 'Dashboard';
+
   return (
-    <header className="sticky top-0 z-10 border-b border-black/5 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1024px] items-center gap-4 px-8">
-        <div className="flex min-w-0 flex-1 items-center gap-4">
-          <Link href="/dashboard" className="inline-flex md:hidden">
-            <Image src="/Images/logo.png" alt="Perkzio" width={132} height={32} priority className="h-8 w-auto" />
-          </Link>
+    <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between bg-white/80 px-8 shadow-sm shadow-rose-900/5 backdrop-blur-xl md:left-64">
+      <div className="flex items-center space-x-2">
+        <span className="font-headline text-sm font-semibold text-on-surface">{title}</span>
+      </div>
 
-          <div className="hidden w-[280px] items-center gap-2 rounded-full bg-[#F3F4F6] px-4 py-2 md:flex">
-            <Search className="h-4 w-4 text-zinc-500" aria-hidden />
-            <input
-              aria-label="Search"
-              placeholder="Search analytics..."
-              className="w-full bg-transparent text-sm text-zinc-900 placeholder:text-zinc-500 outline-none"
+      <div className="flex items-center space-x-6">
+        <div className="h-6 w-px bg-outline/10" />
+
+        <button
+          type="button"
+          aria-label="Notifications"
+          className="relative text-on-surface/70 transition-colors hover:text-primary-brand"
+        >
+          <Bell className="h-5 w-5" aria-hidden />
+          <span className="absolute right-0 top-0 h-2 w-2 rounded-full border-2 border-white bg-primary-brand" />
+        </button>
+
+        <div className="relative" ref={containerRef}>
+          <button type="button" onClick={() => setProfileOpen((v) => !v)} className="relative">
+            <span className="sr-only">Open profile menu</span>
+            <Image
+              alt="Business Owner Avatar"
+              className="h-8 w-8 rounded-full ring-2 ring-primary-brand/10"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHCmNAO9iFds2nRip1KfpfRZnK9z1B8X2y1sefR30fAfPgfg8ZUBLkmJd51rINcMhJZAQNYklonhTtu-BMHNGEwfI9fDmDg7QLirIQUAjOapO8hij8fdImSyFLp4YvFeh9YVTcLW6DnkDQOeUTlnCEO5foqZz3YDBfiAwblqgtYzK8xykGt8iaSXNa5DOVLOYyRvDiXTrojrJ7JkIwq9gfGIxBc_B5-4zJuB1r8IAI-9E6nPm10YXOVAB4LsCAtRwNKN22LZkbdgLh"
+              width={32}
+              height={32}
+              unoptimized
+              priority
             />
-          </div>
-
-          <nav className="hidden items-center gap-4 md:flex">
-            <TopTab href="/analytics" label="Analytics" />
-            <TopTab href="/reports" label="Reports" />
-          </nav>
-        </div>
-
-        <div className="hidden items-center gap-3 md:flex">
-          <Button
-            variant="secondary"
-            className="bg-zinc-900 !text-white hover:bg-zinc-700"
-            onClick={() => null}
-          >
-            <SwitchCamera className="mr-2 h-4 w-4 text-white" aria-hidden />
-            Switch Branch
-          </Button>
-
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100"
-          >
-            <Bell className="h-5 w-5" aria-hidden />
           </button>
 
-          <Link
-            href="/settings"
-            aria-label="Settings"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100"
-          >
-            <Settings className="h-5 w-5" aria-hidden />
-          </Link>
-
-          <div className="relative" ref={containerRef}>
-            <button
-              type="button"
-              onClick={() => setProfileOpen((v) => !v)}
-              className="inline-flex items-center gap-3 rounded-full bg-white px-3 py-2 ring-1 ring-black/5 hover:bg-zinc-50"
-            >
-              <span className="hidden max-w-[220px] text-right md:block">
-                <span className="block truncate text-sm font-semibold text-zinc-900">{email || 'Merchant'}</span>
-                <span className="block truncate text-xs text-zinc-500">Merchant</span>
-              </span>
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white">
-                {initials}
-              </span>
-              <ChevronDown className="h-4 w-4 text-zinc-500" aria-hidden />
-            </button>
-
-            {profileOpen ? (
-              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl bg-white shadow-[0_20px_50px_-25px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
+          {profileOpen ? (
+            <div className="absolute right-0 mt-3 w-56 overflow-hidden rounded-2xl bg-white shadow-[0_20px_50px_-25px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
+              <div className="px-4 py-3">
+                <p suppressHydrationWarning className="truncate text-sm font-semibold text-zinc-900">
+                  {email || 'Merchant'}
+                </p>
+                <p className="truncate text-xs text-zinc-500">Merchant</p>
+              </div>
+              <div className="border-t border-black/5">
                 <Link href="/settings" className="block px-4 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50">
                   Settings
                 </Link>
-                <form action="/api/auth/logout" method="post" className="border-t border-black/5">
-                  <button
-                    type="submit"
-                    className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
-                  >
-                    <LogOut className="h-4 w-4" aria-hidden />
-                    Logout
-                  </button>
-                </form>
               </div>
-            ) : null}
-          </div>
+              <form action="/api/auth/logout" method="post" className="border-t border-black/5">
+                <button
+                  type="submit"
+                  className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                >
+                  <LogOut className="h-4 w-4" aria-hidden />
+                  Logout
+                </button>
+              </form>
+              <div className="border-t border-black/5 px-4 py-2">
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen(false)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50"
+                >
+                  <span className="sr-only">Close menu</span>
+                  <ChevronDown className="h-4 w-4 rotate-180" aria-hidden />
+                  Close
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </header>

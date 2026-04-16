@@ -1,10 +1,32 @@
+@config "../tailwind.config.ts";
 @import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
   --primary: #f11e69;
   --muted: #f5f5f5;
+  --surface: #f5f7f5;
+  --surface-bright: #f5f7f5;
+  --on-surface: #2c2f2e;
+  --on-surface-variant: #595c5b;
+  --outline: #757776;
+  --outline-variant: #abaeac;
+  --surface-container-low: #eff1ef;
+  --surface-container-lowest: #ffffff;
+  --primary-brand: #b7004b;
+  --secondary-brand: #b30069;
+  --on-primary-container: #4d001b;
+  --on-primary: #ffeff0;
+  --primary-container: #ff7292;
+  --primary-fixed-dim: #ff5482;
+  --secondary-fixed-dim: #ffacca;
+  --tertiary-fixed-dim: #a993ff;
+  --inverse-surface: #0c0f0e;
 }
 
 @theme inline {
@@ -12,8 +34,33 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-muted: var(--muted);
-  --font-sans: var(--font-geist-sans);
+  --color-surface: var(--surface);
+  --color-surface-bright: var(--surface-bright);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-primary-brand: var(--primary-brand);
+  --color-secondary-brand: var(--secondary-brand);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-inverse-surface: var(--inverse-surface);
+  --font-sans: var(--font-inter), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+}
+
+.kinetic-shadow {
+  box-shadow: 0 20px 40px -10px rgba(183, 0, 75, 0.08);
+}
+
+.font-headline {
+  font-family: var(--font-plus-jakarta), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,5 +73,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

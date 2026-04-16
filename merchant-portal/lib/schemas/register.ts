@@ -3,10 +3,10 @@ import { z } from 'zod';
 const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 export const registerApplicationSchema = z.object({
-  businessName: z.string().min(2),
+  businessName: z.string().min(2, 'Business name must be at least 2 characters'),
   category: z.string().min(1, 'Select a category'),
-  contactName: z.string().min(2),
-  contactEmail: z.string().email(),
+  contactName: z.string().min(2, 'Merchant name must be at least 2 characters'),
+  contactEmail: z.string().email('Enter a valid email address'),
   contactPhone: z
     .string()
     .trim()
@@ -17,17 +17,17 @@ export const registerApplicationSchema = z.object({
     .string()
     .trim()
     .transform((s) => s.toUpperCase())
-    .refine((v) => !v || panRegex.test(v), 'Invalid PAN'),
+    .refine((v) => !v || panRegex.test(v), 'Enter a valid PAN (e.g. ABCDE1234F)'),
   outletsCount: z.preprocess(
     (v) => (typeof v === 'string' || typeof v === 'number' ? Number(v) : v),
-    z.number().int().min(1).max(200),
+    z.number().int().min(1, 'Outlets must be at least 1').max(200, 'Outlets cannot exceed 200'),
   ),
   gstin: z
     .string()
     .trim()
-    .refine((v) => !v || /^[0-9A-Z]{15}$/.test(v), 'GSTIN must be 15 characters (A-Z, 0-9)'),
-  addressLine1: z.string().min(5),
-  city: z.string().min(2),
+    .refine((v) => !v || /^[0-9A-Z]{15}$/.test(v), 'Enter a valid GSTIN (15 characters, A-Z and 0-9)'),
+  addressLine1: z.string().min(5, 'Registered address must be at least 5 characters'),
+  city: z.string().min(2, 'City must be at least 2 characters'),
   state: z.string().min(2, 'Select state'),
   pinCode: z.string().regex(/^[0-9]{6}$/, 'Enter a valid 6-digit PIN'),
   mapsUrl: z

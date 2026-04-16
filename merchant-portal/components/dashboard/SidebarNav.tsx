@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { LayoutGrid, Users, CreditCard, Megaphone, Tag, Store, LifeBuoy } from 'lucide-react';
+import { CreditCard, LayoutGrid, LifeBuoy, Megaphone, Store, Tag, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils/cn';
 
@@ -26,35 +26,10 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function SidebarNav() {
   const pathname = usePathname();
-  const [merchantStatus, setMerchantStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/merchant/me', { method: 'GET' })
-      .then(async (r) => (r.ok ? ((await r.json().catch(() => null)) as unknown) : null))
-      .then((json) => {
-        if (cancelled) return;
-        const status =
-          json && typeof json === 'object'
-            ? String((json as { merchant?: { status?: unknown } }).merchant?.status ?? '')
-            : '';
-        setMerchantStatus(status || null);
-      })
-      .catch(() => {
-        if (!cancelled) setMerchantStatus(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const visibleItems = useMemo(() => {
-    if (merchantStatus === 'ACTIVE' || merchantStatus === null) return NAV_ITEMS;
-    return NAV_ITEMS.filter((i) => i.href === '/dashboard');
-  }, [merchantStatus]);
+  const visibleItems = useMemo(() => NAV_ITEMS, []);
 
   return (
-    <nav className="space-y-1">
+    <nav className="flex-1 space-y-1">
       {visibleItems.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = item.icon;
@@ -63,15 +38,14 @@ export default function SidebarNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              'relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors',
+              'mx-4 flex items-center rounded-full px-6 py-3 transition-all duration-300',
               isActive
-                ? 'bg-[#FDF2F8] text-primary'
-                : 'text-zinc-900 hover:bg-zinc-50',
+                ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-lg shadow-rose-500/20 ease-out'
+                : 'text-slate-600 hover:translate-x-1 hover:bg-rose-50',
             )}
           >
-            {isActive ? <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-primary" /> : null}
-            <Icon className={cn('h-5 w-5', isActive ? 'text-primary' : 'text-zinc-900')} aria-hidden />
-            <span>{item.label}</span>
+            <Icon className={cn('mr-3 h-5 w-5', isActive ? 'text-white' : 'text-slate-600')} aria-hidden />
+            <span className="font-headline text-sm font-medium">{item.label}</span>
           </Link>
         );
       })}

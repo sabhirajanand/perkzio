@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { BadgeCheck } from 'lucide-react';
 
 import Card from '@/components/ui/card';
 import Button from '@/components/ui/button';
@@ -32,6 +33,7 @@ export default function ProfileSettings() {
     if (!me || typeof me !== 'object' || !('merchant' in me)) return null;
     return me.merchant.status;
   }, [me]);
+  void status;
 
   const emailVerified = useMemo(() => {
     if (!me || typeof me !== 'object' || !('user' in me)) return false;
@@ -116,7 +118,10 @@ export default function ProfileSettings() {
       <Card className="rounded-[32px] p-6">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Business email</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Business email</p>
+              {emailVerified ? <BadgeCheck className="h-4 w-4 text-emerald-600" aria-hidden /> : null}
+            </div>
             <p className="mt-1 text-sm font-semibold text-zinc-900">
               {me && typeof me === 'object' && 'merchant' in me ? me.merchant.primaryBusinessEmail || '—' : loading ? 'Loading…' : '—'}
             </p>
@@ -142,26 +147,18 @@ export default function ProfileSettings() {
         </div>
       </Card>
 
-      <Card id="verify-email" className="rounded-[32px] p-6">
+      {!emailVerified ? (
+        <Card id="verify-email" className="rounded-[32px] p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Verify email</h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              {status === 'ACTIVE'
-                ? emailVerified
-                  ? 'Your email is verified.'
-                  : 'Verify your email to secure your account.'
-                : 'Email verification becomes available after your application is approved.'}
-            </p>
+            <p className="mt-1 text-sm text-zinc-600">Verify your email to secure your account.</p>
           </div>
-          {status === 'ACTIVE' && !emailVerified ? (
             <Button onClick={sendVerification} disabled={sending || verifying}>
               {sending ? 'Sending…' : 'Send code'}
             </Button>
-          ) : null}
         </div>
 
-        {status === 'ACTIVE' && !emailVerified ? (
           <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Verification code</label>
@@ -177,8 +174,8 @@ export default function ProfileSettings() {
               {verifying ? 'Verifying…' : 'Verify'}
             </Button>
           </div>
-        ) : null}
       </Card>
+      ) : null}
     </div>
   );
 }

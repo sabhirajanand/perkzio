@@ -12,25 +12,25 @@ export interface AppShellProps {
 
 export default function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[#F5F5F5]">
-      <div className="flex min-h-screen">
-        <aside className="sticky top-0 hidden h-screen w-[256px] shrink-0 flex-col bg-white shadow-[0_25px_50px_-25px_rgba(0,0,0,0.35)] md:flex">
-          <div className="border-b border-[#E7E7E7] px-5 py-5">
-            <Link href="/dashboard" className="inline-flex w-full items-center justify-center">
-              <Image src="/Images/logo.png" alt="Perkzio" width={170} height={48} priority className="h-auto w-[170px]" />
-            </Link>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
-            <SidebarNav />
-          </div>
-        </aside>
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TopNavBar />
-
-          <main className="mx-auto w-full max-w-[1024px] px-8 pb-12 pt-12">{children}</main>
+    <div className="min-h-screen bg-surface">
+      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col space-y-2 bg-white/60 py-8 shadow-2xl shadow-rose-900/5 backdrop-blur-2xl md:flex">
+        <div className="mb-10 px-8">
+          <Link href="/dashboard" className="inline-flex items-center gap-3">
+            <Image src="/Images/icon.png" alt="Perkzio" width={28} height={28} priority className="h-7 w-7 rounded-full" />
+            <div>
+              <h1 className="font-headline text-lg font-black uppercase tracking-widest text-slate-900">Perkzio</h1>
+              <p className="mt-1 text-[10px] font-bold tracking-widest text-primary-brand/80">PREMIUM MERCHANT</p>
+            </div>
+          </Link>
         </div>
-      </div>
+        <SidebarNav />
+      </aside>
+
+      <TopNavBar />
+
+      <main className="ml-0 min-h-screen bg-surface pt-16 md:ml-64">
+        <div className="mx-auto max-w-7xl px-10 py-12">{children}</div>
+      </main>
     </div>
   );
 }

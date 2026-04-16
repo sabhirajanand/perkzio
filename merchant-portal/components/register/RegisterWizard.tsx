@@ -75,6 +75,8 @@ export default function RegisterWizard() {
       'contactPhone',
       'password',
       'confirmPassword',
+      'gstin',
+      'pan',
     ]);
     if (!ok) return;
 

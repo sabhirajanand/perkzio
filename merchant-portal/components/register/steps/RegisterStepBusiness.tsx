@@ -32,6 +32,7 @@ export interface RegisterStepBusinessProps {
 export default function RegisterStepBusiness({ onNext }: RegisterStepBusinessProps) {
   const form = useFormContext<RegisterApplicationInput>();
   const category = form.watch('category');
+  const pan = form.watch('pan');
 
   return (
     <div className="space-y-[30px]">
@@ -47,7 +48,7 @@ export default function RegisterStepBusiness({ onNext }: RegisterStepBusinessPro
             <Label htmlFor="businessName" className="tracking-[0.06em]">
               Business Name *
             </Label>
-            <Input id="businessName" placeholder="e.g. Sovereign Blue Cafe" {...form.register('businessName')} />
+            <Input id="businessName" placeholder="Sovereign Blue Cafe" {...form.register('businessName')} />
             {errorText(form.formState.errors.businessName?.message)}
           </div>
 
@@ -71,6 +72,36 @@ export default function RegisterStepBusiness({ onNext }: RegisterStepBusinessPro
             </Label>
             <Input id="contactName" placeholder="Full Name" {...form.register('contactName')} />
             {errorText(form.formState.errors.contactName?.message)}
+          </div>
+
+          <div>
+            <Label htmlFor="gstin" className="tracking-[0.06em]">
+              GSTIN (optional)
+            </Label>
+            <Input
+              id="gstin"
+              placeholder="15 characters (A-Z, 0-9)"
+              {...form.register('gstin', {
+                setValueAs: (v) => (typeof v === 'string' ? v.trim().toUpperCase() : v),
+              })}
+            />
+            {errorText(form.formState.errors.gstin?.message)}
+          </div>
+
+          <div>
+            <Label htmlFor="pan" className="tracking-[0.06em]">
+              PAN (optional)
+            </Label>
+            <Input
+              id="pan"
+              placeholder="ABCDE1234F"
+              maxLength={10}
+              value={pan || ''}
+              {...form.register('pan', {
+                onChange: (e) => form.setValue('pan', String(e.target.value || '').toUpperCase(), { shouldValidate: true }),
+              })}
+            />
+            {errorText(form.formState.errors.pan?.message)}
           </div>
 
           <div>

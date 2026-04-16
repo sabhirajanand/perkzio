@@ -1,10 +1,8 @@
 'use client';
 
+import { Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-
-import Card from '@/components/ui/card';
-import Button from '@/components/ui/button';
+import { useEffect, useState } from 'react';
 
 type MerchantMe =
   | {
@@ -32,27 +30,24 @@ export default function EmailVerifyBanner() {
     };
   }, []);
 
-  const shouldShow = useMemo(() => {
+  const shouldShow = () => {
     if (!me || typeof me !== 'object' || !('merchant' in me)) return false;
-    if (me.merchant.status !== 'ACTIVE') return false;
     const verifiedAt = me.user?.emailVerifiedAt ?? null;
     return !verifiedAt;
-  }, [me]);
+  };
 
   if (!shouldShow) return null;
 
   return (
-    <Card className="rounded-[32px] border border-primary/20 bg-[#FDF2F8] p-6 ring-1 ring-black/5">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-zinc-900">Verify your email</p>
-          <p className="mt-1 text-sm text-zinc-600">Verify your email to secure your account and unlock all features.</p>
-        </div>
-        <Link href="/settings#verify-email">
-          <Button>Verify email</Button>
-        </Link>
-      </div>
-    </Card>
+    <div className="flex items-center rounded-full border-l-4 border-primary-brand/20 bg-surface-container-low p-4">
+      <Mail className="mr-3 h-6 w-6 shrink-0 text-primary-brand/60" strokeWidth={1.75} aria-hidden />
+      <p className="text-sm text-on-surface-variant">
+        Please{' '}
+        <Link href="/settings#verify-email" className="text-primary-brand font-bold hover:underline">
+          verify your email
+        </Link>{' '}
+        to enable full campaign features.
+      </p>
+    </div>
   );
 }
-

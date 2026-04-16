@@ -19,29 +19,29 @@ import { hashPassword } from '../../../../lib/auth/password.js';
 const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 const registerApplicationSchema = z.object({
-  businessName: z.string().min(2),
-  category: z.string().min(1),
-  contactName: z.string().min(2),
-  contactEmail: z.string().email(),
-  contactPhone: z.string().min(10).max(15),
-  password: z.string().min(8),
+  businessName: z.string().min(2, 'Business name must be at least 2 characters'),
+  category: z.string().min(1, 'Select a category'),
+  contactName: z.string().min(2, 'Merchant name must be at least 2 characters'),
+  contactEmail: z.string().email('Enter a valid email address'),
+  contactPhone: z.string().min(10, 'Enter a valid mobile number').max(15, 'Enter a valid mobile number'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   pan: z
     .string()
     .trim()
     .transform((s) => s.toUpperCase())
     .optional()
-    .refine((v) => !v || panRegex.test(v), 'Invalid PAN'),
-  outletsCount: z.number().int().min(1).max(200),
+    .refine((v) => !v || panRegex.test(v), 'Enter a valid PAN (e.g. ABCDE1234F)'),
+  outletsCount: z.number().int().min(1, 'Outlets must be at least 1').max(200, 'Outlets cannot exceed 200'),
   gstin: z
     .string()
     .trim()
     .optional()
-    .refine((v) => !v || /^[0-9A-Z]{15}$/.test(v), 'GSTIN must be 15 characters (A-Z, 0-9)'),
-  addressLine1: z.string().min(5),
-  city: z.string().min(2),
-  state: z.string().min(2),
-  pinCode: z.string().min(6),
-  mapsUrl: z.string().min(1),
+    .refine((v) => !v || /^[0-9A-Z]{15}$/.test(v), 'Enter a valid GSTIN (15 characters, A-Z and 0-9)'),
+  addressLine1: z.string().min(5, 'Registered address must be at least 5 characters'),
+  city: z.string().min(2, 'City must be at least 2 characters'),
+  state: z.string().min(2, 'Select state'),
+  pinCode: z.string().min(6, 'Enter a valid PIN code'),
+  mapsUrl: z.string().min(1, 'Google Maps link is required'),
   website: z.string().trim().max(512).optional(),
   googleBusinessUrl: z.string().trim().max(512).optional(),
   instagram: z.string().trim().max(200).optional(),
