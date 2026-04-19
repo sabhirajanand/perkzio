@@ -137,16 +137,36 @@ export interface MerchantDetailDto {
     pan: string | null;
     gstin: string | null;
     registeredAddress: unknown;
+    referralCode?: string | null;
     createdAt: string;
     updatedAt: string;
+    category?: { id: string; name: string; slug: string } | null;
   };
+  headBranch: Record<string, unknown> | null;
+  onboardingApplication: Record<string, unknown> | null;
 }
 
 export async function getMerchant(merchantId: string): Promise<MerchantDetailDto | null> {
   const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchants/${merchantId}` });
   if (!result.ok || !result.json || typeof result.json !== 'object') return null;
-  const json = result.json as { merchant?: unknown };
+  const json = result.json as {
+    merchant?: unknown;
+    headBranch?: unknown;
+    onboardingApplication?: unknown;
+  };
   if (!json.merchant || typeof json.merchant !== 'object') return null;
-  return { merchant: json.merchant as MerchantDetailDto['merchant'] };
+  return {
+    merchant: json.merchant as MerchantDetailDto['merchant'],
+    headBranch:
+      json.headBranch !== undefined && json.headBranch !== null && typeof json.headBranch === 'object'
+        ? (json.headBranch as Record<string, unknown>)
+        : null,
+    onboardingApplication:
+      json.onboardingApplication !== undefined &&
+      json.onboardingApplication !== null &&
+      typeof json.onboardingApplication === 'object'
+        ? (json.onboardingApplication as Record<string, unknown>)
+        : null,
+  };
 }
 

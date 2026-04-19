@@ -32,12 +32,14 @@ export default async function MerchantRegistrationsPage() {
 
       <Card className="rounded-[32px] p-6">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-separate border-spacing-y-2 text-left text-sm">
+          <table className="w-full min-w-[1120px] border-separate border-spacing-y-2 text-left text-sm">
             <thead>
               <tr className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                 <th className="px-4 py-2">Reference</th>
                 <th className="px-4 py-2">Business</th>
                 <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Phone</th>
+                <th className="px-4 py-2">Outlets</th>
                 <th className="px-4 py-2">Plan</th>
                 <th className="px-4 py-2">Status</th>
                 <th className="px-4 py-2">Submitted</th>
@@ -54,6 +56,8 @@ export default async function MerchantRegistrationsPage() {
                   </td>
                   <td className="px-4 py-3 text-zinc-700">{a.businessName || '—'}</td>
                   <td className="px-4 py-3 text-zinc-700">{a.contactEmail || '—'}</td>
+                  <td className="px-4 py-3 text-zinc-700">{a.contactPhone || '—'}</td>
+                  <td className="px-4 py-3 text-zinc-700">{a.outletsCount != null ? String(a.outletsCount) : '—'}</td>
                   <td className="px-4 py-3 text-zinc-700">{a.plan || '—'}</td>
                   <td className="px-4 py-3 text-zinc-700">{merchantApplicationStatusLabel(a.status)}</td>
                   <td className="px-4 py-3 text-zinc-700">{new Date(a.createdAt).toLocaleString()}</td>
@@ -83,7 +87,7 @@ export default async function MerchantRegistrationsPage() {
               ))}
               {applications.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-sm text-zinc-600">
+                  <td colSpan={9} className="px-4 py-6 text-sm text-zinc-600">
                     No applications found.
                   </td>
                 </tr>

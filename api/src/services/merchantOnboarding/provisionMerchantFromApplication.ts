@@ -8,6 +8,15 @@ import { MerchantUser } from '../../entities/MerchantUser.js';
 import { AppError } from '../../errors/AppError.js';
 import { ErrorCodes } from '../../errors/codes.js';
 
+function emptyToUndefined(value: unknown): unknown {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string' && value.trim() === '') return undefined;
+  return value;
+}
+
+const optionalPublicImageUrl = z.preprocess(emptyToUndefined, z.string().url().optional());
+const optionalImageFileName = z.preprocess(emptyToUndefined, z.string().min(1).optional());
+
 const businessPayloadSchema = z.object({
   businessName: z.string().min(2),
   contactName: z.string().min(2),
@@ -28,6 +37,12 @@ const businessPayloadSchema = z.object({
   instagram: z.string().optional(),
   facebook: z.string().optional(),
   googleBusinessUrl: z.string().optional(),
+  insideViewFileName: optionalImageFileName,
+  insideViewUrl: optionalPublicImageUrl,
+  outsideViewFileName: optionalImageFileName,
+  outsideViewUrl: optionalPublicImageUrl,
+  logoFileName: optionalImageFileName,
+  logoUrl: optionalPublicImageUrl,
 });
 
 

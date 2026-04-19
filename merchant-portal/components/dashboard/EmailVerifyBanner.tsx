@@ -36,7 +36,7 @@ export default function EmailVerifyBanner() {
     return !verifiedAt;
   };
 
-  if (!shouldShow) return null;
+  if (!shouldShow()) return null;
 
   return (
     <div className="flex items-center rounded-full border-l-4 border-primary-brand/20 bg-surface-container-low p-4">

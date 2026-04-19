@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { CreditCard, LayoutGrid, LifeBuoy, Megaphone, Store, Tag, Users } from 'lucide-react';
+import { CreditCard, LayoutGrid, LifeBuoy, Lock, Megaphone, Store, Tag, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils/cn';
 
@@ -12,20 +12,44 @@ interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** When true, show read-only lock until merchant.status is ACTIVE. */
+  requiresActiveMerchant: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
-  { label: 'Customers', href: '/customers', icon: Users },
-  { label: 'Loyalty cards', href: '/loyalty-cards', icon: CreditCard },
-  { label: 'Campaigns', href: '/campaigns', icon: Megaphone },
-  { label: 'Offers', href: '/offers', icon: Tag },
-  { label: 'Branches', href: '/branches', icon: Store },
-  { label: 'Support', href: '/support', icon: LifeBuoy },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid, requiresActiveMerchant: false },
+  { label: 'Customers', href: '/customers', icon: Users, requiresActiveMerchant: true },
+  { label: 'Loyalty cards', href: '/loyalty-cards', icon: CreditCard, requiresActiveMerchant: true },
+  { label: 'Campaigns', href: '/campaigns', icon: Megaphone, requiresActiveMerchant: true },
+  { label: 'Offers', href: '/offers', icon: Tag, requiresActiveMerchant: true },
+  { label: 'Branches', href: '/branches', icon: Store, requiresActiveMerchant: true },
+  { label: 'Support', href: '/support', icon: LifeBuoy, requiresActiveMerchant: true },
 ];
 
 export default function SidebarNav() {
   const pathname = usePathname();
+  const [merchantStatus, setMerchantStatus] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/merchant/me')
+      .then(async (r) => {
+        if (!r.ok) return null;
+        return (await r.json().catch(() => null)) as { merchant?: { status?: string } } | null;
+      })
+      .then((json) => {
+        if (cancelled) return;
+        const s = json?.merchant?.status;
+        setMerchantStatus(typeof s === 'string' ? s : null);
+      })
+      .catch(() => {
+        if (!cancelled) setMerchantStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const visibleItems = useMemo(() => NAV_ITEMS, []);
 
   return (
@@ -33,23 +57,52 @@ export default function SidebarNav() {
       {visibleItems.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = item.icon;
+        const readOnlyBadge =
+          item.requiresActiveMerchant &&
+          merchantStatus !== undefined &&
+          merchantStatus !== null &&
+          merchantStatus !== 'ACTIVE';
+
         return (
           <Link
             key={item.href}
             href={item.href}
+            title={readOnlyBadge ? 'Read-only until your business is approved' : undefined}
             className={cn(
-              'mx-4 flex items-center rounded-full px-6 py-3 transition-all duration-300',
+              'relative mx-4 flex items-center rounded-full px-6 py-3 transition-all duration-300',
               isActive
                 ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-lg shadow-rose-500/20 ease-out'
                 : 'text-slate-600 hover:translate-x-1 hover:bg-rose-50',
+              readOnlyBadge && 'opacity-[0.88]',
             )}
           >
-            <Icon className={cn('mr-3 h-5 w-5', isActive ? 'text-white' : 'text-slate-600')} aria-hidden />
-            <span className="font-headline text-sm font-medium">{item.label}</span>
+            {readOnlyBadge ? (
+              <span
+                className="pointer-events-none absolute inset-0 rounded-full bg-white/35 ring-1 ring-black/[0.06]"
+                aria-hidden
+              />
+            ) : null}
+            <Icon
+              className={cn(
+                'relative z-[1] mr-3 h-5 w-5 shrink-0',
+                isActive ? 'text-white' : 'text-slate-600',
+              )}
+              aria-hidden
+            />
+            <span className="relative z-[1] min-w-0 flex-1 font-headline text-sm font-medium">{item.label}</span>
+            {readOnlyBadge ? (
+              <Lock
+                className={cn(
+                  'relative z-[1] ml-2 h-4 w-4 shrink-0',
+                  isActive ? 'text-white/90' : 'text-slate-500',
+                )}
+                strokeWidth={2}
+                aria-hidden
+              />
+            ) : null}
           </Link>
         );
       })}
     </nav>
   );
 }
-

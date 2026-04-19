@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import Card from '@/components/ui/card';
 import Button from '@/components/ui/button';
+import MerchantApprovedProfileDetails from '@/components/merchants/MerchantApprovedProfileDetails';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
 import { getMerchant } from '@/lib/platform/platformServer';
@@ -36,7 +37,9 @@ export default async function MerchantViewPage({ params }: { params: Promise<{ m
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">{m.legalName}</h1>
-          <p className="mt-2 text-sm text-zinc-600">Read-only merchant profile.</p>
+          <p className="mt-2 text-sm text-zinc-600">
+            Account, branch, and onboarding snapshot (including legacy fields stored on the application).
+          </p>
         </div>
         {canEdit ? (
           <Link href={`/merchants/${merchantId}/edit`}>
@@ -45,27 +48,7 @@ export default async function MerchantViewPage({ params }: { params: Promise<{ m
         ) : null}
       </div>
 
-      <Card className="rounded-[32px] p-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Status</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{m.status}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">KYC status</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{m.kycStatus}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Primary email</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{m.primaryBusinessEmail || '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Subscription limited mode</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{m.subscriptionLimitedMode ? 'Yes' : 'No'}</p>
-          </div>
-        </div>
-      </Card>
+      <MerchantApprovedProfileDetails detail={detail} />
     </div>
   );
 }
-

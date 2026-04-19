@@ -40,6 +40,12 @@ export default function ProfileSettings() {
     return Boolean(me.user.emailVerifiedAt);
   }, [me]);
 
+  const showVerifyEmailSection = useMemo(() => {
+    if (loading) return false;
+    if (!me || typeof me !== 'object' || !('user' in me)) return false;
+    return !me.user.emailVerifiedAt;
+  }, [loading, me]);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -147,7 +153,7 @@ export default function ProfileSettings() {
         </div>
       </Card>
 
-      {!emailVerified ? (
+      {showVerifyEmailSection ? (
         <Card id="verify-email" className="rounded-[32px] p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

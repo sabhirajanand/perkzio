@@ -107,7 +107,14 @@ export default function RegisterStepReview({ onBack, onEditStep, onSubmitted, se
       setValue('outsideViewUrl', outsideUrl, { shouldValidate: true });
       setValue('logoUrl', logoUrl, { shouldValidate: true });
 
-      const payload = getValues();
+      const { confirmPassword: _confirmPassword, ...rest } = getValues();
+      void _confirmPassword;
+      const payload = {
+        ...rest,
+        insideViewUrl: insideUrl,
+        outsideViewUrl: outsideUrl,
+        logoUrl,
+      };
       const res = await fetch('/api/onboarding/application', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

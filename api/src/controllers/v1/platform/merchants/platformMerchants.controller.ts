@@ -2,7 +2,10 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import { getDataSource } from '../../../../config/database.js';
+import { Branch } from '../../../../entities/Branch.js';
 import { Merchant } from '../../../../entities/Merchant.js';
+import { MerchantOnboardingApplication } from '../../../../entities/MerchantOnboardingApplication.js';
+import { SubscriptionPlan } from '../../../../entities/SubscriptionPlan.js';
 import { AppError } from '../../../../errors/AppError.js';
 import { ErrorCodes } from '../../../../errors/codes.js';
 
@@ -35,12 +38,57 @@ export async function listMerchants(req: Request, res: Response): Promise<void> 
   });
 }
 
+function sanitizeOnboardingBusinessPayload(payload: unknown): unknown {
+  if (!payload || typeof payload !== 'object') return payload;
+  const next = { ...(payload as Record<string, unknown>) };
+  delete next.passwordHash;
+  delete next.password;
+  return next;
+}
+
+function serializeApplicationReviewer(staff: MerchantOnboardingApplication['reviewedByStaff']) {
+  if (!staff) return null;
+  return { id: staff.id, email: staff.email, fullName: staff.fullName };
+}
+
+function serializeOnboardingPlan(plan: SubscriptionPlan | null) {
+  if (!plan) return null;
+  return {
+    id: plan.id,
+    code: plan.code,
+    name: plan.name,
+    maxLoyaltyCards: plan.maxLoyaltyCards,
+    maxActiveCustomers: plan.maxActiveCustomers,
+    maxMonthlyPushNotifications: plan.maxMonthlyPushNotifications,
+    maxConcurrentSpecialOffers: plan.maxConcurrentSpecialOffers,
+    allowedCampaignTypes: plan.allowedCampaignTypes,
+    analyticsTier: plan.analyticsTier,
+    supportSlaTier: plan.supportSlaTier,
+    qrStandeeEntitlement: plan.qrStandeeEntitlement,
+    isActive: plan.isActive,
+    createdAt: plan.createdAt,
+    updatedAt: plan.updatedAt,
+  };
+}
+
 export async function getMerchant(req: Request, res: Response): Promise<void> {
   const merchantId = z.string().uuid().parse(req.params.merchantId);
   const ds = getDataSource();
   const repo = ds.getRepository(Merchant);
-  const merchant = await repo.findOne({ where: { id: merchantId } });
+  const merchant = await repo.findOne({ where: { id: merchantId }, relations: { category: true } });
   if (!merchant) throw new AppError(404, ErrorCodes.NOT_FOUND, 'Merchant not found');
+
+  const branchRepo = ds.getRepository(Branch);
+  const headBranch = await branchRepo.findOne({
+    where: { merchant: { id: merchantId }, isHeadBranch: true },
+  });
+
+  const appRepo = ds.getRepository(MerchantOnboardingApplication);
+  const onboardingApplication = await appRepo.findOne({
+    where: { merchant: { id: merchantId } },
+    order: { createdAt: 'DESC' },
+    relations: { selectedPlan: true, reviewedByStaff: true },
+  });
 
   res.json({
     ok: true,
@@ -55,9 +103,43 @@ export async function getMerchant(req: Request, res: Response): Promise<void> {
       pan: merchant.pan,
       gstin: merchant.gstin,
       registeredAddress: merchant.registeredAddress,
+      referralCode: merchant.referralCode,
       createdAt: merchant.createdAt,
       updatedAt: merchant.updatedAt,
+      category: merchant.category
+        ? { id: merchant.category.id, name: merchant.category.name, slug: merchant.category.slug }
+        : null,
     },
+    headBranch: headBranch
+      ? {
+          id: headBranch.id,
+          name: headBranch.name,
+          status: headBranch.status,
+          isHeadBranch: headBranch.isHeadBranch,
+          address: headBranch.address,
+          socialLinks: headBranch.socialLinks,
+          openingHours: headBranch.openingHours,
+          googleMapsPlaceId: headBranch.googleMapsPlaceId,
+          latitude: headBranch.latitude,
+          longitude: headBranch.longitude,
+          createdAt: headBranch.createdAt,
+          updatedAt: headBranch.updatedAt,
+        }
+      : null,
+    onboardingApplication: onboardingApplication
+      ? {
+          id: onboardingApplication.id,
+          referenceNumber: onboardingApplication.referenceNumber,
+          status: onboardingApplication.status,
+          createdAt: onboardingApplication.createdAt,
+          updatedAt: onboardingApplication.updatedAt,
+          reviewedAt: onboardingApplication.reviewedAt,
+          reviewedByStaff: serializeApplicationReviewer(onboardingApplication.reviewedByStaff),
+          razorpayOrderId: onboardingApplication.razorpayOrderId,
+          businessPayload: sanitizeOnboardingBusinessPayload(onboardingApplication.businessPayload),
+          selectedPlan: serializeOnboardingPlan(onboardingApplication.selectedPlan),
+        }
+      : null,
   });
 }
 

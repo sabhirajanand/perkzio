@@ -1,5 +1,5 @@
+import '../loadDotenv.js';
 import 'reflect-metadata';
-import * as dotenv from 'dotenv';
 import { DataSource } from 'typeorm';
 import { loadEnv } from './env.js';
 import {
@@ -48,8 +48,6 @@ import {
   SupportTicket,
   SupportTicketMessage,
 } from '../entities/index.js';
-
-dotenv.config();
 
 const env = loadEnv();
 

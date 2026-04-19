@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { toast } from 'sonner';
 import Input from '@/components/ui/input';
 import Label from '@/components/ui/label';
 import RegisterFormCard from '@/components/register/RegisterFormCard';
@@ -20,6 +21,7 @@ import {
 import OperatingHoursCard from '@/components/register/steps/location/OperatingHoursCard';
 import UploadQueue, { type UploadQueueItem } from '@/components/register/steps/location/UploadQueue';
 import { INDIAN_STATES } from '@/lib/indian-states';
+import { isRegistrationImageOverLimit } from '@/lib/register/registrationImageLimits';
 import type { RegisterApplicationInput } from '@/lib/schemas/register';
 import { cn } from '@/lib/utils/cn';
 
@@ -74,6 +76,11 @@ export default function RegisterStepLocation({
   const [mapsEmbedUrl, setMapsEmbedUrl] = useState<string>('');
 
   async function continueLocation() {
+    const imageFiles = [selectedFiles.inside, selectedFiles.outside, selectedFiles.logo];
+    if (imageFiles.some((f) => f && isRegistrationImageOverLimit(f))) {
+      toast.error('Max file size is 5MB');
+      return;
+    }
     const ok = await form.trigger(LOCATION_FIELDS);
     if (ok) onNext();
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { MAX_REGISTRATION_IMAGE_BYTES } from '@/lib/register/registrationImageLimits';
 import { uploadImageToSupabaseS3 } from '@/lib/upload';
 
 export async function POST(req: Request) {
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
     if (!file.type.startsWith('image/')) {
       return NextResponse.json({ message: 'Only image uploads are allowed' }, { status: 422 });
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_REGISTRATION_IMAGE_BYTES) {
       return NextResponse.json({ message: 'Max file size is 5MB' }, { status: 422 });
     }
 

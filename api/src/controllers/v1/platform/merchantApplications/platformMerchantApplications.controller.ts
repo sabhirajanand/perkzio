@@ -49,6 +49,59 @@ function pickSummary(app: MerchantOnboardingApplication) {
   };
 }
 
+function sanitizeBusinessPayloadForAdmin(payload: unknown): unknown {
+  if (!payload || typeof payload !== 'object') return payload;
+  const next = { ...(payload as Record<string, unknown>) };
+  delete next.passwordHash;
+  delete next.password;
+  return next;
+}
+
+function serializeSelectedPlan(plan: MerchantOnboardingApplication['selectedPlan']) {
+  if (!plan) return null;
+  return {
+    id: plan.id,
+    code: plan.code,
+    name: plan.name,
+    maxLoyaltyCards: plan.maxLoyaltyCards,
+    maxActiveCustomers: plan.maxActiveCustomers,
+    maxMonthlyPushNotifications: plan.maxMonthlyPushNotifications,
+    maxConcurrentSpecialOffers: plan.maxConcurrentSpecialOffers,
+    allowedCampaignTypes: plan.allowedCampaignTypes,
+    analyticsTier: plan.analyticsTier,
+    supportSlaTier: plan.supportSlaTier,
+    qrStandeeEntitlement: plan.qrStandeeEntitlement,
+    isActive: plan.isActive,
+    createdAt: plan.createdAt,
+    updatedAt: plan.updatedAt,
+  };
+}
+
+function serializeLinkedMerchant(merchant: MerchantOnboardingApplication['merchant']) {
+  if (!merchant) return null;
+  return {
+    id: merchant.id,
+    legalName: merchant.legalName,
+    tradingName: merchant.tradingName,
+    status: merchant.status,
+    kycStatus: merchant.kycStatus,
+    subscriptionLimitedMode: merchant.subscriptionLimitedMode,
+    primaryBusinessEmail: merchant.primaryBusinessEmail,
+    pan: merchant.pan,
+    gstin: merchant.gstin,
+    registeredAddress: merchant.registeredAddress,
+    referralCode: merchant.referralCode,
+    createdAt: merchant.createdAt,
+    updatedAt: merchant.updatedAt,
+    deletedAt: merchant.deletedAt,
+  };
+}
+
+function serializeReviewer(staff: MerchantOnboardingApplication['reviewedByStaff']) {
+  if (!staff) return null;
+  return { id: staff.id, email: staff.email, fullName: staff.fullName };
+}
+
 export async function listMerchantApplications(req: Request, res: Response): Promise<void> {
   const parsed = listSchema.safeParse(req.query);
   if (!parsed.success) throw new AppError(422, ErrorCodes.VALIDATION_ERROR, 'Invalid request', parsed.error.flatten());
@@ -69,7 +122,22 @@ export async function getMerchantApplication(req: Request, res: Response): Promi
   const repo = ds.getRepository(MerchantOnboardingApplication);
   const application = await repo.findOne({ where: { id: applicationId }, relations: { selectedPlan: true, merchant: true, reviewedByStaff: true } });
   if (!application) throw new AppError(404, ErrorCodes.NOT_FOUND, 'Application not found');
-  res.json({ ok: true, application });
+  res.json({
+    ok: true,
+    application: {
+      id: application.id,
+      referenceNumber: application.referenceNumber,
+      status: application.status,
+      businessPayload: sanitizeBusinessPayloadForAdmin(application.businessPayload),
+      razorpayOrderId: application.razorpayOrderId,
+      reviewedAt: application.reviewedAt,
+      createdAt: application.createdAt,
+      updatedAt: application.updatedAt,
+      selectedPlan: serializeSelectedPlan(application.selectedPlan),
+      merchant: serializeLinkedMerchant(application.merchant),
+      reviewedByStaff: serializeReviewer(application.reviewedByStaff),
+    },
+  });
 }
 
 export async function updateMerchantApplication(req: Request, res: Response): Promise<void> {

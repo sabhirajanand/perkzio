@@ -18,7 +18,17 @@ import { hashPassword } from '../../../../lib/auth/password.js';
 
 const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
-const registerApplicationSchema = z.object({
+function emptyToUndefined(value: unknown): unknown {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string' && value.trim() === '') return undefined;
+  return value;
+}
+
+const optionalPublicImageUrl = z.preprocess(emptyToUndefined, z.string().url().optional());
+const optionalImageFileName = z.preprocess(emptyToUndefined, z.string().min(1).optional());
+
+const registerApplicationSchema = z
+  .object({
   businessName: z.string().min(2, 'Business name must be at least 2 characters'),
   category: z.string().min(1, 'Select a category'),
   contactName: z.string().min(2, 'Merchant name must be at least 2 characters'),
@@ -46,6 +56,12 @@ const registerApplicationSchema = z.object({
   googleBusinessUrl: z.string().trim().max(512).optional(),
   instagram: z.string().trim().max(200).optional(),
   facebook: z.string().trim().max(512).optional(),
+  insideViewFileName: optionalImageFileName,
+  insideViewUrl: optionalPublicImageUrl,
+  outsideViewFileName: optionalImageFileName,
+  outsideViewUrl: optionalPublicImageUrl,
+  logoFileName: optionalImageFileName,
+  logoUrl: optionalPublicImageUrl,
   gstCertFileName: z.string().optional(),
   panCardFileName: z.string().optional(),
   addressProofFileName: z.string().optional(),
@@ -56,7 +72,23 @@ const registerApplicationSchema = z.object({
   shopPhotoUploadKey: z.string().optional(),
   plan: z.enum(['LITE', 'GROWTH', 'PRO']),
   billingCycle: z.enum(['MONTHLY', 'ANNUAL']).optional(),
-});
+  })
+  .superRefine((data, ctx) => {
+    if (!data.logoUrl || !data.insideViewUrl || !data.outsideViewUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Public image URLs for logo, inside view, and outside view are required',
+        path: ['logoUrl'],
+      });
+    }
+    if (!data.logoFileName || !data.insideViewFileName || !data.outsideViewFileName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'File names for logo, inside view, and outside view are required',
+        path: ['logoFileName'],
+      });
+    }
+  });
 
 function createReferenceNumber(): string {
   const suffix = randomBytes(6).toString('hex').toUpperCase();
@@ -87,6 +119,40 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
   const selectedPlan = await planRepo.findOne({ where: { code: parsed.data.plan, isActive: true } });
   if (!selectedPlan) {
     throw new AppError(422, ErrorCodes.VALIDATION_ERROR, 'Unknown plan');
+  }
+
+  const referenceNumber = createReferenceNumber();
+  let liteRazorpayOrder: { id: string; amount?: number | string; currency?: string } | null = null;
+  if (parsed.data.plan === 'LITE') {
+    const paymentEnv = loadEnv();
+    if (!paymentEnv.RAZORPAY_KEY_ID || !paymentEnv.RAZORPAY_KEY_SECRET) {
+      throw new AppError(
+        503,
+        ErrorCodes.INTERNAL_ERROR,
+        'Payment checkout is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET for the API.',
+      );
+    }
+    const billingCycle = parsed.data.billingCycle ?? 'MONTHLY';
+    const amountPaise = calcLiteTotalPaise({ outletsCount: parsed.data.outletsCount, billingCycle });
+    try {
+      liteRazorpayOrder = await getRazorpayClient().orders.create({
+        amount: amountPaise,
+        currency: 'INR',
+        receipt: referenceNumber,
+        notes: {
+          referenceNumber,
+          plan: parsed.data.plan,
+          billingCycle,
+        },
+      });
+    } catch (err) {
+      throw new AppError(
+        502,
+        ErrorCodes.INTERNAL_ERROR,
+        'Could not start payment with Razorpay. Check API keys and Razorpay dashboard status.',
+        err instanceof Error ? { message: err.message } : undefined,
+      );
+    }
   }
 
   const appRepo = ds.getRepository(MerchantOnboardingApplication);
@@ -155,11 +221,21 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
   );
 
   const application = appRepo.create({
-    referenceNumber: createReferenceNumber(),
+    referenceNumber,
     status: parsed.data.plan === 'LITE' ? 'PAYMENT_PENDING' : 'SUBMITTED',
-    businessPayload: { ...businessPayload, passwordHash },
+    businessPayload: {
+      ...businessPayload,
+      passwordHash,
+      logoUrl: parsed.data.logoUrl,
+      logoFileName: parsed.data.logoFileName,
+      insideViewUrl: parsed.data.insideViewUrl,
+      insideViewFileName: parsed.data.insideViewFileName,
+      outsideViewUrl: parsed.data.outsideViewUrl,
+      outsideViewFileName: parsed.data.outsideViewFileName,
+    },
     selectedPlan,
     merchant,
+    razorpayOrderId: liteRazorpayOrder?.id ?? null,
   });
 
   await appRepo.save(application);
@@ -207,24 +283,7 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
     }
   }
 
-  if (parsed.data.plan === 'LITE') {
-    const billingCycle = parsed.data.billingCycle ?? 'MONTHLY';
-    const amountPaise = calcLiteTotalPaise({ outletsCount: parsed.data.outletsCount, billingCycle });
-    const order = await getRazorpayClient().orders.create({
-      amount: amountPaise,
-      currency: 'INR',
-      receipt: application.referenceNumber,
-      notes: {
-        applicationId: application.id,
-        referenceNumber: application.referenceNumber,
-        plan: parsed.data.plan,
-        billingCycle,
-      },
-    });
-
-    application.razorpayOrderId = order.id;
-    await appRepo.save(application);
-
+  if (parsed.data.plan === 'LITE' && liteRazorpayOrder) {
     res.status(201).json({
       ok: true,
       applicationId: application.id,
@@ -233,9 +292,9 @@ export async function submitMerchantOnboardingApplication(req: Request, res: Res
       checkout: {
         provider: 'RAZORPAY',
         keyId: getRazorpayKeyId(),
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
+        orderId: liteRazorpayOrder.id,
+        amount: liteRazorpayOrder.amount,
+        currency: liteRazorpayOrder.currency,
       },
     });
     return;

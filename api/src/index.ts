@@ -1,7 +1,5 @@
+import './loadDotenv.js';
 import 'reflect-metadata';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 import { createApp } from './app.js';
 import { closeDatabase, initDatabase } from './config/database.js';

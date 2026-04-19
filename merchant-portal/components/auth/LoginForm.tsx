@@ -24,7 +24,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const form = useForm<MerchantLoginInput>({
     resolver: zodResolver(merchantLoginSchema),
-    defaultValues: { role: 'MERCHANT_ADMIN', email: '', password: '', rememberMe: true },
+    defaultValues: { role: 'MERCHANT_ADMIN', email: '', password: '', rememberMe: false },
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { isRegistrationImageOverLimit } from '@/lib/register/registrationImageLimits';
 import { cn } from '@/lib/utils/cn';
 
 export interface ImageUploadProps {
@@ -37,6 +38,10 @@ export default function ImageUpload({
   const [isUploading, setIsUploading] = useState(false);
 
   async function upload(file: File) {
+    if (isRegistrationImageOverLimit(file)) {
+      toast.error('Max file size is 5MB');
+      return;
+    }
     const id = `${kind}:${file.name}`;
     setIsUploading(true);
     onProgress?.({ id, fileName: file.name, progress: 10 });
@@ -79,6 +84,11 @@ export default function ImageUpload({
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (!f) return;
+          if (isRegistrationImageOverLimit(f)) {
+            toast.error('Max file size is 5MB');
+            e.target.value = '';
+            return;
+          }
           void upload(f);
         }}
       />

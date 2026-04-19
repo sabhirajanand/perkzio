@@ -1,15 +1,10 @@
 import Card from '@/components/ui/card';
 import MerchantApplicationActions from '@/components/merchants/MerchantApplicationActions';
+import MerchantRegistrationApplicationDetails from '@/components/merchants/MerchantRegistrationApplicationDetails';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
 import { getMerchantApplication } from '@/lib/platform/platformServer';
 import { readServerSession } from '@/lib/session/readServerSession';
-
-function readField(payload: unknown, key: string): string | null {
-  if (!payload || typeof payload !== 'object') return null;
-  const v = (payload as Record<string, unknown>)[key];
-  return typeof v === 'string' && v.trim().length > 0 ? v : null;
-}
 
 export default async function MerchantRegistrationDetailPage({ params }: { params: Promise<{ applicationId: string }> }) {
   const { applicationId } = await params;
@@ -40,7 +35,6 @@ export default async function MerchantRegistrationDetailPage({ params }: { param
   const a = application as Record<string, unknown>;
   const status = typeof a.status === 'string' ? a.status : '—';
   const referenceNumber = typeof a.referenceNumber === 'string' ? a.referenceNumber : '—';
-  const payload = a.businessPayload;
 
   return (
     <div className="space-y-6">
@@ -55,43 +49,7 @@ export default async function MerchantRegistrationDetailPage({ params }: { param
         {status === 'SUBMITTED' ? <MerchantApplicationActions applicationId={applicationId} disabled={!canReview} /> : null}
       </div>
 
-      <Card className="rounded-[32px] p-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Business name</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{readField(payload, 'businessName') || '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Category</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{readField(payload, 'category') || '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Contact name</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{readField(payload, 'contactName') || '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Contact email</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{readField(payload, 'contactEmail') || '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Contact phone</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{readField(payload, 'contactPhone') || '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Plan</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{readField(payload, 'plan') || '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">PAN</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{readField(payload, 'pan') || '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">GSTIN</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900">{readField(payload, 'gstin') || '—'}</p>
-          </div>
-        </div>
-      </Card>
+      <MerchantRegistrationApplicationDetails application={a} />
     </div>
   );
 }
-
