@@ -3,6 +3,13 @@ import type { Express } from 'express';
 import { AdminPermissions } from '../../../constants/permissions.js';
 import { adminLogin, adminMe } from '../../../controllers/v1/platform/auth/adminAuth.controller.js';
 import {
+  approveMerchantBranchRequest,
+  getMerchantBranchRequestForPlatform,
+  listAllMerchantBranchRequestsForPlatform,
+  listMerchantBranchRequestsForPlatform,
+  rejectMerchantBranchRequest,
+} from '../../../controllers/v1/platform/merchantBranchRequests/platformMerchantBranchRequests.controller.js';
+import {
   approveMerchantApplication,
   getMerchantApplication,
   listMerchantApplications,
@@ -90,6 +97,36 @@ export function registerPlatformRoutes(app: Express): void {
     adminAuthMiddleware,
     requireAdminPermission(AdminPermissions.MERCHANTS_VIEW),
     asyncHandler(getMerchant),
+  );
+  app.get(
+    '/v1/platform/merchants/:merchantId/branch-requests',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_VIEW),
+    asyncHandler(listMerchantBranchRequestsForPlatform),
+  );
+  app.get(
+    '/v1/platform/merchant-branch-requests',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_VIEW),
+    asyncHandler(listAllMerchantBranchRequestsForPlatform),
+  );
+  app.get(
+    '/v1/platform/merchant-branch-requests/:requestId',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_VIEW),
+    asyncHandler(getMerchantBranchRequestForPlatform),
+  );
+  app.post(
+    '/v1/platform/merchant-branch-requests/:requestId/approve',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_EDIT),
+    asyncHandler(approveMerchantBranchRequest),
+  );
+  app.post(
+    '/v1/platform/merchant-branch-requests/:requestId/reject',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_EDIT),
+    asyncHandler(rejectMerchantBranchRequest),
   );
   app.patch(
     '/v1/platform/merchants/:merchantId',

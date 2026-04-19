@@ -2,16 +2,16 @@ import { useMemo, useState } from 'react';
 import Select from '@/components/ui/Select';
 import { cn } from '@/lib/utils/cn';
 
-type DayKey = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
+export type DayKey = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
 
-interface DayHours {
+export interface DayHours {
   day: DayKey;
   open: boolean;
   from: string;
   to: string;
 }
 
-const defaultHours: DayHours[] = [
+export const DEFAULT_OUTLET_HOURS: DayHours[] = [
   { day: 'Mon', open: true, from: '10:00', to: '20:00' },
   { day: 'Tue', open: true, from: '10:00', to: '20:00' },
   { day: 'Wed', open: true, from: '10:00', to: '20:00' },
@@ -46,8 +46,20 @@ function makeTimeOptions(stepMinutes = 30) {
 
 const TIME_OPTIONS = makeTimeOptions(30);
 
-export default function OperatingHoursCard() {
-  const [hours, setHours] = useState<DayHours[]>(defaultHours);
+export interface OperatingHoursCardProps {
+  value?: DayHours[];
+  onChange?: (hours: DayHours[]) => void;
+}
+
+export default function OperatingHoursCard({ value, onChange }: OperatingHoursCardProps) {
+  const [internal, setInternal] = useState<DayHours[]>(DEFAULT_OUTLET_HOURS);
+  const controlled = value !== undefined;
+  const hours = controlled ? value : internal;
+
+  function commitHours(next: DayHours[]) {
+    if (controlled) onChange?.(next);
+    else setInternal(next);
+  }
 
   const dayLabel = useMemo<Record<DayKey, string>>(
     () => ({
@@ -79,7 +91,7 @@ export default function OperatingHoursCard() {
                   onClick={() => {
                     const next = hours.slice();
                     next[idx] = { ...row, open: !row.open };
-                    setHours(next);
+                    commitHours(next);
                   }}
                   className={cn(
                     'relative h-6 w-11 shrink-0 rounded-full ring-1 transition-colors',
@@ -112,7 +124,7 @@ export default function OperatingHoursCard() {
                   onValueChange={(v) => {
                     const next = hours.slice();
                     next[idx] = { ...row, from: v };
-                    setHours(next);
+                    commitHours(next);
                   }}
                   options={TIME_OPTIONS}
                   placeholder="From"
@@ -127,7 +139,7 @@ export default function OperatingHoursCard() {
                   onValueChange={(v) => {
                     const next = hours.slice();
                     next[idx] = { ...row, to: v };
-                    setHours(next);
+                    commitHours(next);
                   }}
                   options={TIME_OPTIONS}
                   placeholder="To"
@@ -142,4 +154,3 @@ export default function OperatingHoursCard() {
     </div>
   );
 }
-

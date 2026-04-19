@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, ChevronDown, LogOut } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Settings } from 'lucide-react';
 
 type MerchantMeResponse =
   | { ok: true; user?: { email?: string | null }; merchant?: { primaryBusinessEmail?: string | null } }
@@ -127,7 +127,11 @@ export default function TopNavBar() {
                 <p className="truncate text-xs text-zinc-500">Merchant</p>
               </div>
               <div className="border-t border-black/5">
-                <Link href="/settings" className="block px-4 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50">
+                <Link
+                  href="/settings"
+                  className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                >
+                  <Settings className="h-4 w-4 shrink-0" aria-hidden />
                   Settings
                 </Link>
               </div>

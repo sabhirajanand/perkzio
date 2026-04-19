@@ -6,6 +6,8 @@ import Label from '@/components/ui/label';
 
 type LatLng = { lat: number; lng: number };
 
+const MAP_PICKER_DEFAULT_CENTER: LatLng = { lat: 28.6139, lng: 77.209 };
+
 let mapsOptionsKey: string | null = null;
 
 function ensureMapsOptions(apiKey: string) {
@@ -73,7 +75,7 @@ function findPostalCode(results: google.maps.GeocoderResult[]) {
 export default function MapPicker({ value, onValueChange, onResolvedAddress, label }: MapPickerProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || '';
-  const [coords, setCoords] = useState<LatLng>(() => parseCoordsFromUrl(value) ?? { lat: 28.6139, lng: 77.209 });
+  const [coords, setCoords] = useState<LatLng>(() => parseCoordsFromUrl(value) ?? MAP_PICKER_DEFAULT_CENTER);
   const [searchText, setSearchText] = useState('');
   const boxRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -82,18 +84,22 @@ export default function MapPicker({ value, onValueChange, onResolvedAddress, lab
 
   const resolvedKey = useMemo(() => value.trim(), [value]);
 
-  const lastResolvedInput = useRef<string>('');
+  const geocodeReq = useRef(0);
   useEffect(() => {
+    if (!resolvedKey) {
+      geocodeReq.current += 1;
+      setSearchText('');
+      setCoords(MAP_PICKER_DEFAULT_CENTER);
+      return;
+    }
     const parsed = parseCoordsFromUrl(resolvedKey);
     if (parsed && Number.isFinite(parsed.lat) && Number.isFinite(parsed.lng)) {
       setCoords(parsed);
     }
   }, [resolvedKey]);
 
-  void lastResolvedInput;
-
-  const geocodeReq = useRef(0);
   useEffect(() => {
+    if (!resolvedKey) return;
     if (!apiKey) return;
     if (!onResolvedAddress) return;
     if (!('google' in window) || !google.maps) return;
@@ -117,7 +123,7 @@ export default function MapPicker({ value, onValueChange, onResolvedAddress, lab
     }, 500);
 
     return () => window.clearTimeout(t);
-  }, [apiKey, coords, onResolvedAddress]);
+  }, [apiKey, coords, onResolvedAddress, resolvedKey]);
 
   useEffect(() => {
     if (!apiKey) return;

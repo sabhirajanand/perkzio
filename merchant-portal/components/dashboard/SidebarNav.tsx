@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { CreditCard, LayoutGrid, LifeBuoy, Lock, Megaphone, Store, Tag, Users } from 'lucide-react';
 
+import type { MerchantRole } from '@/lib/schemas/auth';
 import { cn } from '@/lib/utils/cn';
 
 interface NavItem {
@@ -14,6 +15,8 @@ interface NavItem {
   icon: LucideIcon;
   /** When true, show read-only lock until merchant.status is ACTIVE. */
   requiresActiveMerchant: boolean;
+  /** If set, only these roles see the item (e.g. head-merchant-only Branches). */
+  visibleForRoles?: MerchantRole[];
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -22,35 +25,62 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Loyalty cards', href: '/loyalty-cards', icon: CreditCard, requiresActiveMerchant: true },
   { label: 'Campaigns', href: '/campaigns', icon: Megaphone, requiresActiveMerchant: true },
   { label: 'Offers', href: '/offers', icon: Tag, requiresActiveMerchant: true },
-  { label: 'Branches', href: '/branches', icon: Store, requiresActiveMerchant: true },
+  {
+    label: 'Branches',
+    href: '/branches',
+    icon: Store,
+    requiresActiveMerchant: true,
+    visibleForRoles: ['MERCHANT_ADMIN'],
+  },
   { label: 'Support', href: '/support', icon: LifeBuoy, requiresActiveMerchant: true },
 ];
+
+function parseViewerRole(json: unknown): MerchantRole | null {
+  if (!json || typeof json !== 'object') return null;
+  const role = (json as { user?: { role?: unknown } }).user?.role;
+  return role === 'MERCHANT_ADMIN' || role === 'BRANCH_ADMIN' ? role : null;
+}
 
 export default function SidebarNav() {
   const pathname = usePathname();
   const [merchantStatus, setMerchantStatus] = useState<string | null | undefined>(undefined);
+  const [viewerRole, setViewerRole] = useState<MerchantRole | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
     fetch('/api/merchant/me')
       .then(async (r) => {
         if (!r.ok) return null;
-        return (await r.json().catch(() => null)) as { merchant?: { status?: string } } | null;
+        return (await r.json().catch(() => null)) as unknown;
       })
       .then((json) => {
         if (cancelled) return;
-        const s = json?.merchant?.status;
+        const s =
+          json && typeof json === 'object'
+            ? (json as { merchant?: { status?: unknown } }).merchant?.status
+            : undefined;
         setMerchantStatus(typeof s === 'string' ? s : null);
+        setViewerRole(parseViewerRole(json));
       })
       .catch(() => {
-        if (!cancelled) setMerchantStatus(null);
+        if (!cancelled) {
+          setMerchantStatus(null);
+          setViewerRole(null);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const visibleItems = useMemo(() => NAV_ITEMS, []);
+  const visibleItems = useMemo(() => {
+    return NAV_ITEMS.filter((item) => {
+      if (!item.visibleForRoles?.length) return true;
+      if (viewerRole === undefined) return false;
+      if (viewerRole === null) return false;
+      return item.visibleForRoles.includes(viewerRole);
+    });
+  }, [viewerRole]);
 
   return (
     <nav className="flex-1 space-y-1">

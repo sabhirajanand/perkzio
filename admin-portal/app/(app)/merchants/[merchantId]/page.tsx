@@ -3,9 +3,10 @@ import Link from 'next/link';
 import Card from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import MerchantApprovedProfileDetails from '@/components/merchants/MerchantApprovedProfileDetails';
+import MerchantBranchRequestsPanel from '@/components/merchants/MerchantBranchRequestsPanel';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
-import { getMerchant } from '@/lib/platform/platformServer';
+import { getMerchant, listMerchantBranchRequests } from '@/lib/platform/platformServer';
 import { readServerSession } from '@/lib/session/readServerSession';
 
 export default async function MerchantViewPage({ params }: { params: Promise<{ merchantId: string }> }) {
@@ -22,7 +23,10 @@ export default async function MerchantViewPage({ params }: { params: Promise<{ m
     );
   }
 
-  const detail = await getMerchant(merchantId);
+  const [detail, branchRequests] = await Promise.all([
+    getMerchant(merchantId),
+    canView ? listMerchantBranchRequests(merchantId) : Promise.resolve([]),
+  ]);
   if (!detail) {
     return (
       <Card className="rounded-[32px] p-6">
@@ -49,6 +53,10 @@ export default async function MerchantViewPage({ params }: { params: Promise<{ m
       </div>
 
       <MerchantApprovedProfileDetails detail={detail} />
+
+      {canView ? (
+        <MerchantBranchRequestsPanel merchantId={merchantId} requests={branchRequests} canEdit={canEdit} />
+      ) : null}
     </div>
   );
 }

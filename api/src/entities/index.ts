@@ -18,6 +18,7 @@ export { LoyaltyCard } from './LoyaltyCard.js';
 export { LoyaltyCardReward } from './LoyaltyCardReward.js';
 export { Merchant } from './Merchant.js';
 export { MerchantBranchPhoto } from './MerchantBranchPhoto.js';
+export { MerchantBranchRequest } from './MerchantBranchRequest.js';
 export { MerchantKycDocument } from './MerchantKycDocument.js';
 export { MerchantOnboardingApplication } from './MerchantOnboardingApplication.js';
 export { MerchantPushQuota } from './MerchantPushQuota.js';

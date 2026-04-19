@@ -45,6 +45,11 @@ const NAV_SECTIONS: NavSection[] = [
         label: 'Merchant registrations',
         visibility: { type: 'permission', code: AdminPermissions.MERCHANT_APPLICATIONS_LIST },
       },
+      {
+        href: '/merchants/branch-registrations',
+        label: 'Branch registrations',
+        visibility: { type: 'permission', code: AdminPermissions.MERCHANTS_VIEW },
+      },
       { href: '/customers', label: 'Customers', visibility: { type: 'superadmin' } },
     ],
   },

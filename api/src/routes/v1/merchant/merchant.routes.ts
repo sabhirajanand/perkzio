@@ -2,6 +2,11 @@ import type { Express } from 'express';
 
 import { merchantLogin, merchantLogout } from '../../../controllers/v1/merchant/auth/merchantAuth.controller.js';
 import { getDashboardSummary } from '../../../controllers/v1/merchant/dashboard/merchantDashboard.controller.js';
+import {
+  listMerchantBranchRequests,
+  submitMerchantBranchRequest,
+} from '../../../controllers/v1/merchant/branchRequests/merchantBranchRequests.controller.js';
+import { listBranches } from '../../../controllers/v1/merchant/branches/merchantBranches.controller.js';
 import { getCustomer, listCustomers } from '../../../controllers/v1/merchant/customers/merchantCustomers.controller.js';
 import { createOffer, getOffer, listOffers, updateOffer } from '../../../controllers/v1/merchant/offers/merchantOffers.controller.js';
 import { sendMerchantEmailVerification, verifyMerchantEmailVerification } from '../../../controllers/v1/merchant/emailVerification/merchantEmailVerification.controller.js';
@@ -30,6 +35,9 @@ export function registerMerchantRoutes(app: Express): void {
   app.get('/v1/merchant/dashboard/summary', merchantAuthMiddleware, asyncHandler(getDashboardSummary));
   app.get('/v1/merchant/customers', merchantAuthMiddleware, asyncHandler(listCustomers));
   app.get('/v1/merchant/customers/:customerId', merchantAuthMiddleware, asyncHandler(getCustomer));
+  app.get('/v1/merchant/branches', merchantAuthMiddleware, asyncHandler(listBranches));
+  app.get('/v1/merchant/branch-requests', merchantAuthMiddleware, asyncHandler(listMerchantBranchRequests));
+  app.post('/v1/merchant/branch-requests', merchantAuthMiddleware, asyncHandler(submitMerchantBranchRequest));
   app.get('/v1/merchant/offers', merchantAuthMiddleware, asyncHandler(listOffers));
   app.post('/v1/merchant/offers', merchantAuthMiddleware, asyncHandler(createOffer));
   app.get('/v1/merchant/offers/:offerId', merchantAuthMiddleware, asyncHandler(getOffer));

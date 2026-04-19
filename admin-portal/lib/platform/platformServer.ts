@@ -170,3 +170,112 @@ export async function getMerchant(merchantId: string): Promise<MerchantDetailDto
   };
 }
 
+export interface MerchantBranchRequestDto {
+  id: string;
+  branchName: string;
+  status: string;
+  adminEmail: string;
+  adminName: string;
+  adminPhone: string;
+  payload: unknown;
+  createdAt: string;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+  resolvedBranchId: string | null;
+}
+
+export async function listMerchantBranchRequests(merchantId: string): Promise<MerchantBranchRequestDto[]> {
+  const result = await authedBackendFetch({
+    method: 'GET',
+    path: `/v1/platform/merchants/${merchantId}/branch-requests`,
+  });
+  if (!result.ok || !result.json || typeof result.json !== 'object') return [];
+  const json = result.json as { requests?: unknown };
+  return Array.isArray(json.requests) ? (json.requests as MerchantBranchRequestDto[]) : [];
+}
+
+export interface BranchRequestsIndexRowDto {
+  id: string;
+  merchant: { id: string; legalName: string; primaryBusinessEmail: string | null; status: string } | null;
+  branchName: string;
+  status: string;
+  adminEmail: string;
+  adminName: string;
+  adminPhone: string;
+  createdAt: string;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+  resolvedBranchId: string | null;
+}
+
+export async function listAllBranchRequests(input?: {
+  status?: string;
+  merchantId?: string;
+}): Promise<BranchRequestsIndexRowDto[]> {
+  const qs = new URLSearchParams();
+  if (input?.status) qs.set('status', input.status);
+  if (input?.merchantId) qs.set('merchantId', input.merchantId);
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchant-branch-requests${suffix}` });
+  if (result.ok && result.json && typeof result.json === 'object') {
+    const json = result.json as { requests?: unknown };
+    return Array.isArray(json.requests) ? (json.requests as BranchRequestsIndexRowDto[]) : [];
+  }
+
+  // Backward-compatible fallback (in case API server isn't running the new index endpoint yet).
+  if (result.status === 404) {
+    const merchants = await listMerchants();
+    const filteredMerchants = input?.merchantId ? merchants.filter((m) => m.id === input.merchantId) : merchants;
+    const perMerchant = await Promise.all(
+      filteredMerchants.map(async (m) => {
+        const rows = await listMerchantBranchRequests(m.id);
+        return rows
+          .filter((r) => (input?.status ? r.status === input.status : true))
+          .map<BranchRequestsIndexRowDto>((r) => ({
+            id: r.id,
+            merchant: {
+              id: m.id,
+              legalName: m.legalName,
+              primaryBusinessEmail: m.primaryBusinessEmail,
+              status: m.status,
+            },
+            branchName: r.branchName,
+            status: r.status,
+            adminEmail: r.adminEmail,
+            adminName: r.adminName,
+            adminPhone: r.adminPhone,
+            createdAt: r.createdAt,
+            reviewedAt: r.reviewedAt,
+            rejectionReason: r.rejectionReason,
+            resolvedBranchId: r.resolvedBranchId,
+          }));
+      }),
+    );
+    return perMerchant.flat().sort((a, b) => (a.createdAt > b.createdAt ? -1 : a.createdAt < b.createdAt ? 1 : 0));
+  }
+
+  return [];
+}
+
+export interface BranchRequestDetailDto {
+  request: MerchantBranchRequestDto & {
+    merchant: {
+      id: string;
+      legalName: string;
+      primaryBusinessEmail: string | null;
+      status: string;
+      kycStatus: string;
+      registeredAddress: unknown;
+    } | null;
+    reviewedByStaff: { id: string; email: string; fullName: string | null } | null;
+  };
+  headBranch: Record<string, unknown> | null;
+  onboardingApplication: Record<string, unknown> | null;
+}
+
+export async function getBranchRequest(requestId: string): Promise<BranchRequestDetailDto | null> {
+  const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchant-branch-requests/${requestId}` });
+  if (!result.ok || !result.json || typeof result.json !== 'object') return null;
+  return result.json as BranchRequestDetailDto;
+}
+

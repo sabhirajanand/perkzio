@@ -12,7 +12,9 @@ const PROTECTED_PREFIXES = [
   '/history',
   '/settings',
   '/tickets',
+  '/support',
   '/billing',
+  '/branches',
 ];
 
 export function middleware(req: NextRequest) {
@@ -21,14 +23,21 @@ export function middleware(req: NextRequest) {
   if (!isProtected) return NextResponse.next();
 
   const hasSession = Boolean(req.cookies.get('mp_session')?.value);
-  if (hasSession) {
-    return NextResponse.next();
+  if (!hasSession) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('next', pathname);
+    return NextResponse.redirect(url);
   }
 
-  const url = req.nextUrl.clone();
-  url.pathname = '/login';
-  url.searchParams.set('next', pathname);
-  return NextResponse.redirect(url);
+  const role = req.cookies.get('mp_role')?.value;
+  if (role === 'BRANCH_ADMIN' && (pathname === '/branches' || pathname.startsWith('/branches/'))) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
@@ -44,6 +53,10 @@ export const config = {
     '/history/:path*',
     '/settings/:path*',
     '/tickets/:path*',
+    '/support',
+    '/support/:path*',
     '/billing/:path*',
+    '/branches',
+    '/branches/:path*',
   ],
 };
