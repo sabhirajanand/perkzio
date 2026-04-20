@@ -5,12 +5,7 @@ import { getAdminAuthHeader } from '@/app/api/platform/_lib/authHeader';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const status = url.searchParams.get('status');
-  const merchantId = url.searchParams.get('merchantId');
-  const qs = new URLSearchParams();
-  if (status) qs.set('status', status);
-  if (merchantId) qs.set('merchantId', merchantId);
-  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  const suffix = url.search ? url.search : '';
 
   const result = await proxyToBackend({
     method: 'GET',

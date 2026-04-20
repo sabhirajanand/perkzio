@@ -6,10 +6,11 @@ export interface AdminAccessTokenClaims {
   userType: 'SUPERADMIN' | 'ADMIN';
 }
 
-export function signAdminAccessToken(input: { env: Env; claims: AdminAccessTokenClaims }): string {
+export function signAdminAccessToken(input: { env: Env; claims: AdminAccessTokenClaims; ttlSeconds?: number }): string {
   const secret = input.env.JWT_ACCESS_SECRET;
   if (!secret) throw new Error('JWT_ACCESS_SECRET is not set');
-  return jwt.sign(input.claims, secret, { expiresIn: input.env.JWT_ACCESS_TTL_SECONDS });
+  const ttlSeconds = typeof input.ttlSeconds === 'number' && Number.isFinite(input.ttlSeconds) ? input.ttlSeconds : input.env.JWT_ACCESS_TTL_SECONDS;
+  return jwt.sign(input.claims, secret, { expiresIn: ttlSeconds });
 }
 
 export function verifyAdminAccessToken(input: { env: Env; token: string }): AdminAccessTokenClaims {

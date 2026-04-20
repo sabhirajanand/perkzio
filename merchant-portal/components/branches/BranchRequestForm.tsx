@@ -72,13 +72,6 @@ export default function BranchRequestForm() {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <section className="rounded-[24px] border border-[#B3B1B4]/10 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.06)] md:p-8">
-          <h2 className="font-headline text-xl font-bold text-[#111827]">Request a new branch</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#6B7280]">
-            Your branch and branch admin are created only after a platform administrator approves this request. The
-            branch admin receives the <span className="font-semibold text-[#333235]">Branch Admin</span> role at that
-            time (scoped to the new branch)—not before approval.
-          </p>
-
           <div className="mt-8 space-y-2">
             <Label htmlFor="branchName" className="text-sm font-semibold text-[#383838]">
               Branch display name *

@@ -40,6 +40,13 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'User management',
     items: [
       { href: '/merchants', label: 'Merchants', visibility: { type: 'permission', code: AdminPermissions.MERCHANTS_LIST } },
+      { href: '/branches', label: 'Branches', visibility: { type: 'permission', code: AdminPermissions.MERCHANTS_LIST } },
+      { href: '/customers', label: 'Customers', visibility: { type: 'superadmin' } },
+    ],
+  },
+  {
+    label: 'Pending Approvals',
+    items: [
       {
         href: '/merchants/registrations',
         label: 'Merchant registrations',
@@ -50,7 +57,6 @@ const NAV_SECTIONS: NavSection[] = [
         label: 'Branch registrations',
         visibility: { type: 'permission', code: AdminPermissions.MERCHANTS_VIEW },
       },
-      { href: '/customers', label: 'Customers', visibility: { type: 'superadmin' } },
     ],
   },
   {

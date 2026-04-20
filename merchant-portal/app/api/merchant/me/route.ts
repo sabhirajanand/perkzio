@@ -12,7 +12,15 @@ export async function GET() {
     path: '/v1/merchant/me',
     headers,
   });
-  if (!result.ok) return jsonError(result.status, 'Unable to fetch merchant');
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 403) {
+      const res = jsonError(result.status, 'Unauthenticated');
+      res.cookies.set({ name: 'mp_session', value: '', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 0 });
+      res.cookies.set({ name: 'mp_role', value: '', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 0 });
+      return res;
+    }
+    return jsonError(result.status, 'Unable to fetch merchant');
+  }
   return NextResponse.json(result.json);
 }
 

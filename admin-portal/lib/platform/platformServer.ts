@@ -96,11 +96,44 @@ export interface MerchantApplicationSummaryDto {
   outletsCount: number | null;
 }
 
-export async function listMerchantApplications(status?: string): Promise<MerchantApplicationSummaryDto[]> {
-  const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+export interface MerchantApplicationsListDto {
+  ok: true;
+  total: number;
+  limit: number;
+  offset: number;
+  applications: MerchantApplicationSummaryDto[];
+}
+
+export async function listMerchantApplicationsPage(input?: {
+  status?: string | null;
+  q?: string | null;
+  planCode?: string | null;
+  createdFrom?: string | null;
+  createdTo?: string | null;
+  limit?: number;
+  offset?: number;
+}): Promise<MerchantApplicationsListDto> {
+  const p = new URLSearchParams();
+  if (input?.status) p.set('status', input.status);
+  if (input?.q) p.set('q', input.q);
+  if (input?.planCode) p.set('planCode', input.planCode);
+  if (input?.createdFrom) p.set('createdFrom', input.createdFrom);
+  if (input?.createdTo) p.set('createdTo', input.createdTo);
+  if (typeof input?.limit === 'number') p.set('limit', String(input.limit));
+  if (typeof input?.offset === 'number') p.set('offset', String(input.offset));
+  const qs = p.toString() ? `?${p.toString()}` : '';
   const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchant-applications${qs}` });
-  const json = result.ok ? (result.json as { applications?: unknown }).applications : null;
-  return Array.isArray(json) ? (json as MerchantApplicationSummaryDto[]) : [];
+  const json =
+    result.ok && result.json && typeof result.json === 'object'
+      ? (result.json as Partial<MerchantApplicationsListDto>)
+      : null;
+  return {
+    ok: true,
+    total: typeof json?.total === 'number' ? json.total : 0,
+    limit: typeof json?.limit === 'number' ? json.limit : (typeof input?.limit === 'number' ? input.limit : 10),
+    offset: typeof json?.offset === 'number' ? json.offset : (typeof input?.offset === 'number' ? input.offset : 0),
+    applications: Array.isArray(json?.applications) ? (json?.applications as MerchantApplicationSummaryDto[]) : [],
+  };
 }
 
 export async function getMerchantApplication(applicationId: string): Promise<unknown | null> {
@@ -113,16 +146,132 @@ export interface MerchantDto {
   id: string;
   legalName: string;
   status: string;
-  kycStatus: string;
   primaryBusinessEmail: string | null;
   createdAt: string;
+  plan: { code: string; name: string } | null;
 }
 
-export async function listMerchants(q?: string): Promise<MerchantDto[]> {
-  const qs = q ? `?q=${encodeURIComponent(q)}` : '';
+export interface MerchantsListDto {
+  ok: true;
+  total: number;
+  limit: number;
+  offset: number;
+  merchants: MerchantDto[];
+}
+
+export interface BranchDto {
+  id: string;
+  name: string;
+  status: string;
+  isHeadBranch: boolean;
+  address: Record<string, unknown> | null;
+  createdAt: string;
+  merchant: { id: string; legalName: string; primaryBusinessEmail: string | null };
+  adminEmail: string | null;
+  plan: { code: string; name: string } | null;
+}
+
+export interface BranchesListDto {
+  ok: true;
+  total: number;
+  limit: number;
+  offset: number;
+  branches: BranchDto[];
+}
+
+export interface BranchDetailDto {
+  ok: true;
+  branch: BranchDto & {
+    googleMapsPlaceId: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    openingHours: unknown;
+    socialLinks: unknown;
+    updatedAt: string;
+  };
+  branchRequest: {
+    id: string;
+    status: string;
+    branchName: string;
+    adminName: string | null;
+    adminEmail: string;
+    adminPhone: string | null;
+    payload: unknown;
+    createdAt: string;
+    reviewedAt: string | null;
+    rejectionReason: string | null;
+  } | null;
+}
+
+export async function listMerchantsPage(input?: {
+  q?: string | null;
+  status?: string | null;
+  planCode?: string | null;
+  createdFrom?: string | null;
+  createdTo?: string | null;
+  limit?: number;
+  offset?: number;
+}): Promise<MerchantsListDto> {
+  const p = new URLSearchParams();
+  if (input?.q) p.set('q', input.q);
+  if (input?.status) p.set('status', input.status);
+  if (input?.planCode) p.set('planCode', input.planCode);
+  if (input?.createdFrom) p.set('createdFrom', input.createdFrom);
+  if (input?.createdTo) p.set('createdTo', input.createdTo);
+  if (typeof input?.limit === 'number') p.set('limit', String(input.limit));
+  if (typeof input?.offset === 'number') p.set('offset', String(input.offset));
+  const qs = p.toString() ? `?${p.toString()}` : '';
   const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/merchants${qs}` });
-  const json = result.ok ? (result.json as { merchants?: unknown }).merchants : null;
-  return Array.isArray(json) ? (json as MerchantDto[]) : [];
+  const json = result.ok && result.json && typeof result.json === 'object' ? (result.json as Partial<MerchantsListDto>) : null;
+  return {
+    ok: true,
+    total: typeof json?.total === 'number' ? json.total : 0,
+    limit: typeof json?.limit === 'number' ? json.limit : (typeof input?.limit === 'number' ? input.limit : 10),
+    offset: typeof json?.offset === 'number' ? json.offset : (typeof input?.offset === 'number' ? input.offset : 0),
+    merchants: Array.isArray(json?.merchants) ? (json?.merchants as MerchantDto[]) : [],
+  };
+}
+
+export async function listBranchesPage(input?: {
+  q?: string | null;
+  status?: string | null;
+  planCode?: string | null;
+  createdFrom?: string | null;
+  createdTo?: string | null;
+  limit?: number;
+  offset?: number;
+}): Promise<BranchesListDto> {
+  const p = new URLSearchParams();
+  if (input?.q) p.set('q', input.q);
+  if (input?.status) p.set('status', input.status);
+  if (input?.planCode) p.set('planCode', input.planCode);
+  if (input?.createdFrom) p.set('createdFrom', input.createdFrom);
+  if (input?.createdTo) p.set('createdTo', input.createdTo);
+  if (typeof input?.limit === 'number') p.set('limit', String(input.limit));
+  if (typeof input?.offset === 'number') p.set('offset', String(input.offset));
+  const qs = p.toString() ? `?${p.toString()}` : '';
+  const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/branches${qs}` });
+  const json =
+    result.ok && result.json && typeof result.json === 'object' ? (result.json as Partial<BranchesListDto>) : null;
+  return {
+    ok: true,
+    total: typeof json?.total === 'number' ? json.total : 0,
+    limit: typeof json?.limit === 'number' ? json.limit : (typeof input?.limit === 'number' ? input.limit : 10),
+    offset: typeof json?.offset === 'number' ? json.offset : (typeof input?.offset === 'number' ? input.offset : 0),
+    branches: Array.isArray(json?.branches) ? (json?.branches as BranchDto[]) : [],
+  };
+}
+
+export async function getBranch(branchId: string): Promise<BranchDetailDto | null> {
+  const result = await authedBackendFetch({ method: 'GET', path: `/v1/platform/branches/${branchId}` });
+  if (!result.ok || !result.json || typeof result.json !== 'object') return null;
+  return result.json as BranchDetailDto;
+}
+
+// Backward-compatible helper for older call sites.
+export async function listMerchants(q?: string): Promise<MerchantDto[]> {
+  const page = await listMerchantsPage({ q: q ?? null, limit: 100, offset: 0 });
+  return page.merchants;
 }
 
 export interface MerchantDetailDto {

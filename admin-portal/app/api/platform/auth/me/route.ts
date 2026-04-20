@@ -17,6 +17,19 @@ export async function GET() {
   });
 
   if (!result.ok) {
+    if (result.status === 401 || result.status === 403) {
+      const res = jsonError(result.status, 'Unauthenticated');
+      res.cookies.set({
+        name: 'ap_session',
+        value: '',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0,
+      });
+      return res;
+    }
     return jsonError(result.status, 'Unable to fetch session');
   }
 

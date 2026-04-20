@@ -23,6 +23,7 @@ function statusPillClass(status: string) {
 }
 
 export default function MerchantBranchRequestsPanel({ merchantId, requests, canEdit }: MerchantBranchRequestsPanelProps) {
+  void merchantId;
   const router = useRouter();
   const [approveId, setApproveId] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);

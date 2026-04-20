@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { CreditCard, LayoutGrid, LifeBuoy, Lock, Megaphone, Store, Tag, Users } from 'lucide-react';
+import { CreditCard, LayoutGrid, LifeBuoy, Lock, Megaphone, Settings, Store, Tag, Users } from 'lucide-react';
 
 import type { MerchantRole } from '@/lib/schemas/auth';
 import { cn } from '@/lib/utils/cn';
@@ -32,6 +32,8 @@ const NAV_ITEMS: NavItem[] = [
     requiresActiveMerchant: true,
     visibleForRoles: ['MERCHANT_ADMIN'],
   },
+  { label: 'Subscription plan', href: '/subscription-plan', icon: CreditCard, requiresActiveMerchant: true, visibleForRoles: ['MERCHANT_ADMIN'] },
+  { label: 'Settings', href: '/settings', icon: Settings, requiresActiveMerchant: false },
   { label: 'Support', href: '/support', icon: LifeBuoy, requiresActiveMerchant: true },
 ];
 

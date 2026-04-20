@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 type OpeningHourRow = { day: string; open: boolean; from: string; to: string };
 
 function readStr(v: unknown): string | null {
@@ -34,7 +36,7 @@ function PhotoTile({ title, imageUrl, storageKey }: { title: string; imageUrl: s
           rel="noreferrer"
           className="mt-3 block overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-black/5"
         >
-          <img src={imageUrl} alt={title} className="h-48 w-full object-cover" loading="lazy" />
+          <Image src={imageUrl} alt={title} width={960} height={384} className="h-48 w-full object-cover" unoptimized />
         </a>
       ) : (
         <p className="mt-3 text-sm text-zinc-600">

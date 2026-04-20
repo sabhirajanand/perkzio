@@ -3,10 +3,9 @@ import Link from 'next/link';
 import Card from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import MerchantApprovedProfileDetails from '@/components/merchants/MerchantApprovedProfileDetails';
-import MerchantBranchRequestsPanel from '@/components/merchants/MerchantBranchRequestsPanel';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
-import { getMerchant, listMerchantBranchRequests } from '@/lib/platform/platformServer';
+import { getMerchant } from '@/lib/platform/platformServer';
 import { readServerSession } from '@/lib/session/readServerSession';
 
 export default async function MerchantViewPage({ params }: { params: Promise<{ merchantId: string }> }) {
@@ -23,10 +22,7 @@ export default async function MerchantViewPage({ params }: { params: Promise<{ m
     );
   }
 
-  const [detail, branchRequests] = await Promise.all([
-    getMerchant(merchantId),
-    canView ? listMerchantBranchRequests(merchantId) : Promise.resolve([]),
-  ]);
+  const detail = await getMerchant(merchantId);
   if (!detail) {
     return (
       <Card className="rounded-[32px] p-6">
@@ -41,9 +37,6 @@ export default async function MerchantViewPage({ params }: { params: Promise<{ m
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">{m.legalName}</h1>
-          <p className="mt-2 text-sm text-zinc-600">
-            Account, branch, and onboarding snapshot (including legacy fields stored on the application).
-          </p>
         </div>
         {canEdit ? (
           <Link href={`/merchants/${merchantId}/edit`}>
@@ -53,10 +46,6 @@ export default async function MerchantViewPage({ params }: { params: Promise<{ m
       </div>
 
       <MerchantApprovedProfileDetails detail={detail} />
-
-      {canView ? (
-        <MerchantBranchRequestsPanel merchantId={merchantId} requests={branchRequests} canEdit={canEdit} />
-      ) : null}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import { getDataSource } from '../../../../config/database.js';
+import { Branch } from '../../../../entities/Branch.js';
 import { Merchant } from '../../../../entities/Merchant.js';
 import { MerchantBranchRequest } from '../../../../entities/MerchantBranchRequest.js';
 import { MerchantUser } from '../../../../entities/MerchantUser.js';
@@ -105,6 +106,12 @@ export async function submitMerchantBranchRequest(req: Request, res: Response): 
     throw new AppError(409, ErrorCodes.CONFLICT, 'A user with this email already exists for your business');
   }
 
+  const branchRepo = getDataSource().getRepository(Branch);
+  const existingBranch = await branchRepo.findOne({ where: { merchant: { id: auth.merchantId }, name: parsed.data.branchName.trim() } });
+  if (existingBranch) {
+    throw new AppError(409, ErrorCodes.CONFLICT, 'A branch with this name already exists for your business');
+  }
+
   const adminPasswordHash = await hashPassword({ password: parsed.data.password });
   const {
     branchName,
@@ -115,6 +122,10 @@ export async function submitMerchantBranchRequest(req: Request, res: Response): 
     adminEmail: _ae,
     ...rest
   } = parsed.data;
+
+  void _pw;
+  void _cp;
+  void _ae;
 
   const payload = {
     ...rest,

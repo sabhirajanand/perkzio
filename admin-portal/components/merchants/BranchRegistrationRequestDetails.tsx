@@ -163,20 +163,17 @@ export default function BranchRegistrationRequestDetails({ detail }: BranchRegis
   const onboardingPayload = onboarding ? readObj(onboarding.businessPayload) : null;
 
   const ownerName = onboardingPayload ? readStr(onboardingPayload.contactName) : null;
-  const ownerEmail = onboardingPayload ? readStr(onboardingPayload.contactEmail) : null;
   const ownerPhone = onboardingPayload ? readStr(onboardingPayload.contactPhone) : null;
 
   return (
     <div className="space-y-6">
       <Card className="rounded-[32px] p-6">
-        <h2 className="text-lg font-semibold text-zinc-900">Merchant context</h2>
+        <h2 className="text-lg font-semibold text-zinc-900">Merchant details</h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          <DetailBlock label="Merchant">{merchant ? (readStr(merchant.legalName) ?? '—') : '—'}</DetailBlock>
+          <DetailBlock label="Admin merchant">{merchant ? (readStr(merchant.legalName) ?? '—') : '—'}</DetailBlock>
           <DetailBlock label="Email">{merchant ? (readStr(merchant.primaryBusinessEmail) ?? '—') : '—'}</DetailBlock>
-          <DetailBlock label="Owner (from onboarding)">{ownerName ?? '—'}</DetailBlock>
-          <DetailBlock label="Owner contact">
-            {[ownerEmail, ownerPhone].filter(Boolean).join(' · ') || '—'}
-          </DetailBlock>
+          <DetailBlock label="Branch admin">{ownerName ?? '—'}</DetailBlock>
+          <DetailBlock label="Contact">{ownerPhone ?? '—'}</DetailBlock>
           <DetailBlock label="Head branch address">
             <AddressLines value={headBranch ? headBranch.address : null} />
           </DetailBlock>

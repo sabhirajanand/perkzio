@@ -28,6 +28,11 @@ function assertStaff(req: Request): string {
 const listAllQuery = z.object({
   status: z.string().optional(),
   merchantId: z.string().uuid().optional(),
+  q: z.string().trim().min(1).optional(),
+  createdFrom: z.string().trim().min(1).optional(),
+  createdTo: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 export async function listMerchantBranchRequestsForPlatform(req: Request, res: Response): Promise<void> {
@@ -77,16 +82,38 @@ export async function listAllMerchantBranchRequestsForPlatform(req: Request, res
     .getRepository(MerchantBranchRequest)
     .createQueryBuilder('r')
     .leftJoinAndSelect('r.merchant', 'm')
-    .orderBy('r.createdAt', 'DESC')
-    .take(200);
+    .orderBy('r.createdAt', 'DESC');
 
   if (parsed.data.status) qb.andWhere('r.status = :status', { status: parsed.data.status });
   if (parsed.data.merchantId) qb.andWhere('r.merchant_id = :merchantId', { merchantId: parsed.data.merchantId });
+  if (parsed.data.q) {
+    qb.andWhere(
+      '(r.branchName ILIKE :q OR r.adminEmail ILIKE :q OR r.adminName ILIKE :q OR r.adminPhone ILIKE :q OR m.legalName ILIKE :q OR m.primaryBusinessEmail ILIKE :q)',
+      { q: `%${parsed.data.q}%` },
+    );
+  }
+  if (parsed.data.createdFrom) {
+    const from = new Date(parsed.data.createdFrom);
+    if (!Number.isNaN(from.getTime())) qb.andWhere('r.createdAt >= :createdFrom', { createdFrom: from.toISOString() });
+  }
+  if (parsed.data.createdTo) {
+    const to = new Date(parsed.data.createdTo);
+    if (!Number.isNaN(to.getTime())) {
+      const endExclusive = new Date(to);
+      endExclusive.setDate(endExclusive.getDate() + 1);
+      qb.andWhere('r.createdAt < :createdTo', { createdTo: endExclusive.toISOString() });
+    }
+  }
 
-  const rows = await qb.getMany();
+  const totalRow = await qb.clone().select('COUNT(*)', 'count').getRawOne<{ count: string }>();
+  const total = Number(totalRow?.count ?? 0);
+  const rows = await qb.take(parsed.data.limit).skip(parsed.data.offset).getMany();
 
   res.json({
     ok: true,
+    total,
+    limit: parsed.data.limit,
+    offset: parsed.data.offset,
     requests: rows.map((r) => ({
       id: r.id,
       merchant: r.merchant
@@ -211,6 +238,11 @@ export async function approveMerchantBranchRequest(req: Request, res: Response):
     const uRepo = em.getRepository(MerchantUser);
     const pRepo = em.getRepository(MerchantBranchPhoto);
     const rRepo = em.getRepository(MerchantBranchRequest);
+
+    const existingBranch = await bRepo.findOne({ where: { merchant: { id: row.merchant.id }, name: row.branchName } });
+    if (existingBranch) {
+      throw new AppError(409, ErrorCodes.CONFLICT, 'A branch with this name already exists for this merchant');
+    }
 
     const branch = bRepo.create({
       merchant: row.merchant,

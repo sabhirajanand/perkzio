@@ -5,12 +5,19 @@ import { getDataSource } from '../../../../config/database.js';
 import { Branch } from '../../../../entities/Branch.js';
 import { Merchant } from '../../../../entities/Merchant.js';
 import { MerchantOnboardingApplication } from '../../../../entities/MerchantOnboardingApplication.js';
+import { MerchantSubscription } from '../../../../entities/MerchantSubscription.js';
 import { SubscriptionPlan } from '../../../../entities/SubscriptionPlan.js';
 import { AppError } from '../../../../errors/AppError.js';
 import { ErrorCodes } from '../../../../errors/codes.js';
 
 const listSchema = z.object({
   q: z.string().trim().min(1).optional(),
+  status: z.string().trim().min(1).optional(),
+  planCode: z.string().trim().min(1).optional(),
+  createdFrom: z.string().trim().min(1).optional(),
+  createdTo: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 export async function listMerchants(req: Request, res: Response): Promise<void> {
@@ -19,21 +26,80 @@ export async function listMerchants(req: Request, res: Response): Promise<void> 
 
   const ds = getDataSource();
   const repo = ds.getRepository(Merchant);
-  const qb = repo.createQueryBuilder('m').orderBy('m.createdAt', 'DESC').take(100);
+  const qb = repo
+    .createQueryBuilder('m')
+    .leftJoin(MerchantSubscription, 'ms', 'ms.merchant_id = m.id')
+    .leftJoin(SubscriptionPlan, 'p', 'p.id = ms.plan_id')
+    .leftJoin(
+      (subQb) =>
+        subQb
+          .select('oa.merchant_id', 'merchant_id')
+          .addSelect('oa.selected_plan_id', 'selected_plan_id')
+          .from(MerchantOnboardingApplication, 'oa')
+          .distinctOn(['oa.merchant_id'])
+          .orderBy('oa.merchant_id', 'ASC')
+          .addOrderBy('oa.created_at', 'DESC'),
+      'oa_latest',
+      'oa_latest.merchant_id = m.id',
+    )
+    .leftJoin(SubscriptionPlan, 'op', 'op.id = oa_latest.selected_plan_id')
+    .orderBy('m.createdAt', 'DESC');
   if (parsed.data.q) {
     qb.where('m.legalName ILIKE :q OR m.primaryBusinessEmail ILIKE :q', { q: `%${parsed.data.q}%` });
   }
-  const merchants = await qb.getMany();
+  if (parsed.data.status) {
+    qb.andWhere('m.status = :status', { status: parsed.data.status });
+  }
+  if (parsed.data.planCode) {
+    qb.andWhere('p.code = :planCode', { planCode: parsed.data.planCode });
+  }
+  if (parsed.data.createdFrom) {
+    const from = new Date(parsed.data.createdFrom);
+    if (!Number.isNaN(from.getTime())) qb.andWhere('m.createdAt >= :createdFrom', { createdFrom: from.toISOString() });
+  }
+  if (parsed.data.createdTo) {
+    const to = new Date(parsed.data.createdTo);
+    if (!Number.isNaN(to.getTime())) {
+      const endExclusive = new Date(to);
+      endExclusive.setDate(endExclusive.getDate() + 1);
+      qb.andWhere('m.createdAt < :createdTo', { createdTo: endExclusive.toISOString() });
+    }
+  }
+
+  const total = await qb.clone().orderBy().getCount();
+
+  const rows = await qb
+    .select('m.id', 'id')
+    .addSelect('m.legalName', 'legalName')
+    .addSelect('m.status', 'status')
+    .addSelect('m.primaryBusinessEmail', 'primaryBusinessEmail')
+    .addSelect('m.createdAt', 'createdAt')
+    .addSelect('COALESCE(p.code, op.code)', 'planCode')
+    .addSelect('COALESCE(p.name, op.name)', 'planName')
+    .take(parsed.data.limit)
+    .skip(parsed.data.offset)
+    .getRawMany<{
+      id: string;
+      legalName: string;
+      status: string;
+      primaryBusinessEmail: string | null;
+      createdAt: string;
+      planCode: string | null;
+      planName: string | null;
+    }>();
 
   res.json({
     ok: true,
-    merchants: merchants.map((m) => ({
+    total,
+    limit: parsed.data.limit,
+    offset: parsed.data.offset,
+    merchants: rows.map((m) => ({
       id: m.id,
       legalName: m.legalName,
       status: m.status,
-      kycStatus: m.kycStatus,
       primaryBusinessEmail: m.primaryBusinessEmail,
       createdAt: m.createdAt,
+      plan: m.planCode ? { code: m.planCode, name: m.planName ?? m.planCode } : null,
     })),
   });
 }

@@ -6,7 +6,7 @@ import MerchantApplicationActions from '@/components/merchants/MerchantApplicati
 import Card from '@/components/ui/card';
 import { AdminPermissions } from '@/lib/constants/permissions';
 import { hasPermission } from '@/lib/permissions/hasPermission';
-import { listMerchantApplications } from '@/lib/platform/platformServer';
+import { listMerchantApplicationsPage } from '@/lib/platform/platformServer';
 import { readServerSession } from '@/lib/session/readServerSession';
 
 const kpis = [
@@ -42,8 +42,11 @@ export default async function DashboardPage() {
   const session = await readServerSession();
   const canListApps = hasPermission(session, AdminPermissions.MERCHANT_APPLICATIONS_LIST);
   const canReviewApps = hasPermission(session, AdminPermissions.MERCHANT_APPLICATIONS_REVIEW);
-  const applications = canListApps ? await listMerchantApplications('SUBMITTED') : [];
-  const pendingCount = applications.length;
+  const applicationsResult = canListApps
+    ? await listMerchantApplicationsPage({ status: 'SUBMITTED', limit: 10, offset: 0 })
+    : { ok: true as const, total: 0, limit: 10, offset: 0, applications: [] };
+  const applications = applicationsResult.applications;
+  const pendingCount = applicationsResult.total;
 
   return (
     <div className="space-y-8">

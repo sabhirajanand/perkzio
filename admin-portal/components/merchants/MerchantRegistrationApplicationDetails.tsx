@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 
 import Card from '@/components/ui/card';
-import { merchantApplicationStatusLabel } from '@/lib/merchantApplications/statusLabel';
-import Link from 'next/link';
 
 export interface MerchantRegistrationApplicationDetailsProps {
   application: Record<string, unknown>;
@@ -16,20 +14,10 @@ function readStr(v: unknown): string | null {
   return typeof v === 'string' && v.trim().length > 0 ? v : null;
 }
 
-function readNum(v: unknown): string | null {
-  return typeof v === 'number' && Number.isFinite(v) ? String(v) : null;
-}
-
 function readPayloadField(payload: unknown, key: string): string | null {
   if (!payload || typeof payload !== 'object') return null;
   const v = (payload as Record<string, unknown>)[key];
   return readStr(v);
-}
-
-function formatDate(v: unknown): string {
-  if (typeof v !== 'string') return '—';
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? v : d.toLocaleString();
 }
 
 function DetailBlock({ label, children }: { label: string; children: ReactNode }) {
@@ -107,64 +95,29 @@ export default function MerchantRegistrationApplicationDetails({
   showLegacyPayloadSections = false,
   showLinkedMerchantRecord = true,
 }: MerchantRegistrationApplicationDetailsProps) {
-  const statusRaw = typeof application.status === 'string' ? application.status : '—';
+  void showLinkedMerchantRecord;
+  void showLegacyPayloadSections;
   const payload = application.businessPayload;
   const selectedPlan = application.selectedPlan;
-  const merchant = application.merchant;
-  const reviewer = application.reviewedByStaff;
 
-  const planObj = selectedPlan && typeof selectedPlan === 'object' ? (selectedPlan as Record<string, unknown>) : null;
-  const merchantObj = merchant && typeof merchant === 'object' ? (merchant as Record<string, unknown>) : null;
-  const reviewerObj = reviewer && typeof reviewer === 'object' ? (reviewer as Record<string, unknown>) : null;
+  void selectedPlan;
 
   return (
     <div className="space-y-4">
-      <Card className="rounded-[32px] p-6">
-        <h2 className="text-sm font-semibold text-zinc-900">Application</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <DetailBlock label="Status">{merchantApplicationStatusLabel(statusRaw)}</DetailBlock>
-          <DetailBlock label="Submitted">{formatDate(application.createdAt)}</DetailBlock>
-          <DetailBlock label="Last updated">{formatDate(application.updatedAt)}</DetailBlock>
-          <DetailBlock label="Reviewed at">{application.reviewedAt ? formatDate(application.reviewedAt) : '—'}</DetailBlock>
-          <DetailBlock label="Reviewed by">
-            {reviewerObj
-              ? readStr(reviewerObj.fullName) || readStr(reviewerObj.email) || readStr(reviewerObj.id) || '—'
-              : '—'}
-          </DetailBlock>
-          <DetailBlock label="Razorpay order ID">{readStr(application.razorpayOrderId) || '—'}</DetailBlock>
-        </div>
-      </Card>
-
-      {showLegacyPayloadSections && planObj ? (
-        <Card className="rounded-[32px] p-6">
-          <h2 className="text-sm font-semibold text-zinc-900">Subscription plan (catalog)</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <DetailBlock label="Plan code">{readStr(planObj.code) || '—'}</DetailBlock>
-            <DetailBlock label="Plan name">{readStr(planObj.name) || '—'}</DetailBlock>
-            <DetailBlock label="Analytics tier">{readStr(planObj.analyticsTier) || '—'}</DetailBlock>
-            <DetailBlock label="Support SLA tier">{readStr(planObj.supportSlaTier) || '—'}</DetailBlock>
-            <DetailBlock label="Max loyalty cards">{readNum(planObj.maxLoyaltyCards) || '—'}</DetailBlock>
-            <DetailBlock label="Max active customers">{readNum(planObj.maxActiveCustomers) || '—'}</DetailBlock>
-          </div>
-        </Card>
-      ) : null}
 
       <Card className="rounded-[32px] p-6">
-        <h2 className="text-sm font-semibold text-zinc-900">Business & primary contact</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Business details</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <DetailBlock label="Business name">{readPayloadField(payload, 'businessName') || '—'}</DetailBlock>
+          <DetailBlock label="Admin name">{readPayloadField(payload, 'contactName') || '—'}</DetailBlock>
           <DetailBlock label="Category">{readPayloadField(payload, 'category') || '—'}</DetailBlock>
-          <DetailBlock label="Contact name">{readPayloadField(payload, 'contactName') || '—'}</DetailBlock>
-          <DetailBlock label="Contact email">{readPayloadField(payload, 'contactEmail') || '—'}</DetailBlock>
-          <DetailBlock label="Contact phone">{readPayloadField(payload, 'contactPhone') || '—'}</DetailBlock>
+          <DetailBlock label="Email">{readPayloadField(payload, 'contactEmail') || '—'}</DetailBlock>
+          <DetailBlock label="Phone">{readPayloadField(payload, 'contactPhone') || '—'}</DetailBlock>
         </div>
       </Card>
 
       <Card className="rounded-[32px] p-6">
-        <h2 className="text-sm font-semibold text-zinc-900">Logo & shop photos</h2>
-        <p className="mt-1 text-xs text-zinc-500">
-          Images from registration (public URLs). Click an image to open it in a new tab.
-        </p>
+        <h2 className="text-sm font-semibold text-zinc-900">Shop photos</h2>
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
           <RegistrationImagePreview
             title="Logo"
@@ -204,16 +157,10 @@ export default function MerchantRegistrationApplicationDetails({
       </Card>
 
       <Card className="rounded-[32px] p-6">
-        <h2 className="text-sm font-semibold text-zinc-900">Plan & scale</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Subscription plan</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <DetailBlock label="Requested plan">{readPayloadField(payload, 'plan') || '—'}</DetailBlock>
-          {planObj && !showLegacyPayloadSections ? <DetailBlock label="Plan (catalog)">{readStr(planObj.name) || '—'}</DetailBlock> : null}
           <DetailBlock label="Billing cycle">{readPayloadField(payload, 'billingCycle') || '—'}</DetailBlock>
-          <DetailBlock label="Outlets (declared)">
-            {!payload || typeof payload !== 'object'
-              ? '—'
-              : readNum((payload as Record<string, unknown>).outletsCount) || '—'}
-          </DetailBlock>
         </div>
       </Card>
 
@@ -238,7 +185,7 @@ export default function MerchantRegistrationApplicationDetails({
             <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Google Business profile</p>
             <div className="mt-1 text-sm">
               {readPayloadField(payload, 'googleBusinessUrl') ? (
-                <OptionalLink href={readPayloadField(payload, 'googleBusinessUrl')!} />
+                <OptionalLink href={readPayloadField(payload, 'googleBusinessUrl')|| '—'} />
               ) : (
                 '—'
               )}
@@ -249,7 +196,7 @@ export default function MerchantRegistrationApplicationDetails({
         </div>
       </Card>
 
-      {showLegacyPayloadSections ? (
+      {/* {showLegacyPayloadSections ? (
         <Card className="rounded-[32px] p-6">
           <h2 className="text-sm font-semibold text-zinc-900">Documents (as submitted)</h2>
           <p className="mt-1 text-xs text-zinc-500">Legacy registration uploads, if any.</p>
@@ -281,26 +228,7 @@ export default function MerchantRegistrationApplicationDetails({
             ))}
           </div>
         </Card>
-      ) : null}
-
-      {showLinkedMerchantRecord && merchantObj && readStr(merchantObj.id) ? (
-        <Card className="rounded-[32px] p-6">
-          <h2 className="text-sm font-semibold text-zinc-900">Linked merchant record</h2>
-          <p className="mt-1 text-xs text-zinc-500">System record created when this application was submitted (may mirror the form answers).</p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <DetailBlock label="Merchant ID">
-              <Link className="text-blue-700 hover:underline" href={`/merchants/${readStr(merchantObj.id)}`}>
-                {readStr(merchantObj.id)}
-              </Link>
-            </DetailBlock>
-            <DetailBlock label="Legal name">{readStr(merchantObj.legalName) || '—'}</DetailBlock>
-            <DetailBlock label="Account status">{readStr(merchantObj.status) || '—'}</DetailBlock>
-            <DetailBlock label="KYC status">{readStr(merchantObj.kycStatus) || '—'}</DetailBlock>
-            <DetailBlock label="Primary email">{readStr(merchantObj.primaryBusinessEmail) || '—'}</DetailBlock>
-            <DetailBlock label="Limited subscription mode">{merchantObj.subscriptionLimitedMode === true ? 'Yes' : merchantObj.subscriptionLimitedMode === false ? 'No' : '—'}</DetailBlock>
-          </div>
-        </Card>
-      ) : null}
+      ) : null} */}
     </div>
   );
 }

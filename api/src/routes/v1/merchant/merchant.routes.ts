@@ -6,7 +6,7 @@ import {
   listMerchantBranchRequests,
   submitMerchantBranchRequest,
 } from '../../../controllers/v1/merchant/branchRequests/merchantBranchRequests.controller.js';
-import { listBranches } from '../../../controllers/v1/merchant/branches/merchantBranches.controller.js';
+import { listBranches, updateBranch } from '../../../controllers/v1/merchant/branches/merchantBranches.controller.js';
 import { getCustomer, listCustomers } from '../../../controllers/v1/merchant/customers/merchantCustomers.controller.js';
 import { createOffer, getOffer, listOffers, updateOffer } from '../../../controllers/v1/merchant/offers/merchantOffers.controller.js';
 import { sendMerchantEmailVerification, verifyMerchantEmailVerification } from '../../../controllers/v1/merchant/emailVerification/merchantEmailVerification.controller.js';
@@ -18,6 +18,7 @@ import { sendOtp, verifyOtp } from '../../../controllers/v1/merchant/otp/merchan
 import { merchantAuthMiddleware } from '../../../middleware/merchantAuth.js';
 import { asyncHandler } from '../../../lib/http/asyncHandler.js';
 import { confirmOnboardingPayment } from '../../../controllers/v1/merchant/payments/onboardingPayments.controller.js';
+import { updateMySubscriptionPlan } from '../../../controllers/v1/merchant/subscription/merchantSubscription.controller.js';
 
 export function registerMerchantRoutes(app: Express): void {
   app.post('/v1/auth/merchant/login', asyncHandler(merchantLogin));
@@ -36,6 +37,8 @@ export function registerMerchantRoutes(app: Express): void {
   app.get('/v1/merchant/customers', merchantAuthMiddleware, asyncHandler(listCustomers));
   app.get('/v1/merchant/customers/:customerId', merchantAuthMiddleware, asyncHandler(getCustomer));
   app.get('/v1/merchant/branches', merchantAuthMiddleware, asyncHandler(listBranches));
+  app.patch('/v1/merchant/branches/:branchId', merchantAuthMiddleware, asyncHandler(updateBranch));
+  app.patch('/v1/merchant/subscription-plan', merchantAuthMiddleware, asyncHandler(updateMySubscriptionPlan));
   app.get('/v1/merchant/branch-requests', merchantAuthMiddleware, asyncHandler(listMerchantBranchRequests));
   app.post('/v1/merchant/branch-requests', merchantAuthMiddleware, asyncHandler(submitMerchantBranchRequest));
   app.get('/v1/merchant/offers', merchantAuthMiddleware, asyncHandler(listOffers));

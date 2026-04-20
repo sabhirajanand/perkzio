@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const result = await proxyToBackend({
     method: 'POST',
     path: '/v1/platform/auth/login',
-    body: { email: parsed.data.email, password: parsed.data.password },
+    body: { email: parsed.data.email, password: parsed.data.password, rememberMe: Boolean(parsed.data.rememberMe) },
   });
 
   if (!result.ok) {

@@ -1,17 +1,21 @@
-import { MapPin, Store } from 'lucide-react';
+import Link from 'next/link';
+import { MapPin, Pencil, Plus, Store } from 'lucide-react';
 
 import { cn } from '@/lib/utils/cn';
 
-import BranchRequestForm from './BranchRequestForm';
-import type { BranchRequestRow, BranchesListDto, BranchRow } from './types';
+import Input from '@/components/ui/input';
+import type { BranchesListDto } from './types';
 
-export type { BranchesListDto, BranchRow, BranchRequestRow } from './types';
+export type { BranchesListDto, BranchRow } from './types';
 
 interface BranchesWorkspaceProps {
   data: BranchesListDto | null;
   loadFailed: boolean;
-  branchRequests: BranchRequestRow[];
-  requestsLoadFailed: boolean;
+  viewerRoleFallback: string | null;
+  q: string | null;
+  status: string | null;
+  page: number;
+  pageSize: number;
 }
 
 function formatAddress(addr: Record<string, unknown> | null): string {
@@ -23,22 +27,37 @@ function formatAddress(addr: Record<string, unknown> | null): string {
   return parts.length ? parts.join(' · ') : '—';
 }
 
-function requestStatusClass(status: string) {
-  if (status === 'PENDING') return 'bg-amber-50 text-amber-900';
-  if (status === 'APPROVED') return 'bg-emerald-50 text-emerald-800';
-  if (status === 'REJECTED') return 'bg-red-50 text-red-800';
-  return 'bg-zinc-100 text-zinc-700';
+function buildUrl(q: string | null, status: string | null, page: number) {
+  const p = new URLSearchParams();
+  if (q) p.set('q', q);
+  if (status) p.set('status', status);
+  if (page > 1) p.set('page', String(page));
+  const s = p.toString();
+  return s ? `/branches?${s}` : '/branches';
+}
+
+function adminNameFromEmail(email: string | null): string {
+  if (!email) return '—';
+  const left = email.split('@')[0] ?? '';
+  const tokens = left.split(/[._-]+/g).filter(Boolean);
+  if (!tokens.length) return '—';
+  return tokens.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(' ');
 }
 
 export default function BranchesWorkspace({
   data,
   loadFailed,
-  branchRequests,
-  requestsLoadFailed,
+  viewerRoleFallback,
+  q,
+  status,
+  page,
+  pageSize,
 }: BranchesWorkspaceProps) {
-  const subtitle = data
-    ? `You have ${data.branches.length} branch${data.branches.length === 1 ? '' : 'es'} on your account.`
-    : 'Open locations, assign branch admins, and keep access aligned with your operations.';
+  const viewerRole = data?.viewerRole ?? viewerRoleFallback ?? '';
+  const canEdit = viewerRole === 'MERCHANT_ADMIN';
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
+  const from = data && data.total > 0 ? data.offset + 1 : 0;
+  const to = data ? Math.min(data.offset + data.branches.length, data.total) : 0;
 
   return (
     <div className="space-y-8">
@@ -47,8 +66,42 @@ export default function BranchesWorkspace({
           <h1 className="font-headline text-4xl font-semibold leading-none tracking-tight text-[#333235] md:text-5xl md:leading-none">
             Branches
           </h1>
-          <p className="max-w-3xl text-lg font-medium leading-7 text-[#4B5563]">{subtitle}</p>
         </div>
+        {viewerRole === 'MERCHANT_ADMIN' ? (
+          <Link
+            href="/branches/request"
+            className="inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#F11E69] to-[#FF4FA3] px-8 text-base font-bold text-white shadow-[0_10px_40px_-10px_rgba(241,30,105,0.4)] transition hover:brightness-95"
+          >
+            <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
+            Add New Branch
+          </Link>
+        ) : null}
+      </div>
+
+      <div className="rounded-[24px] border border-[#B3B1B4]/10 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.06)] md:p-8">
+        <form method="get" action="/branches" className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <input type="hidden" name="page" value="1" />
+          <div className="min-w-0 flex-1">
+            <Input name="q" defaultValue={q ?? ''} placeholder="Search by branch, admin, or location" autoComplete="off" />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <select
+              name="status"
+              defaultValue={status ?? ''}
+              className="h-[55px] rounded-full bg-[#F3F4F6] px-6 text-sm font-semibold text-[#333235] outline-none ring-0 focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">All statuses</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+            <button
+              type="submit"
+              className="h-[55px] rounded-full bg-gradient-to-r from-[#F11E69] to-[#FF4FA3] px-10 text-base font-bold text-white shadow-[0_10px_40px_-10px_rgba(241,30,105,0.4)] transition hover:brightness-95"
+            >
+              Search
+            </button>
+          </div>
+        </form>
       </div>
 
       <div className="overflow-hidden rounded-[24px] border border-[#B3B1B4]/10 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
@@ -60,12 +113,8 @@ export default function BranchesWorkspace({
           </div>
         ) : (
           <>
-            <div className="border-b border-[#FFFBF0] bg-[#FFFBF0] px-6 py-3 text-center text-xs font-semibold text-amber-900/90 sm:px-8">
-              New branches and branch admins are activated only after platform admin approval. Your head branch was
-              created at onboarding.
-            </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse">
+              <table className="w-full min-w-[960px] border-collapse">
                 <thead>
                   <tr className="border-b border-[#B3B1B4]/10 bg-[#F6F3F4]/50">
                     <th className="px-8 py-5 text-left text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
@@ -75,13 +124,13 @@ export default function BranchesWorkspace({
                       Location
                     </th>
                     <th className="px-8 py-5 text-left text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
-                      Type
-                    </th>
-                    <th className="px-8 py-5 text-left text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
-                      Branch admin
+                      Admin
                     </th>
                     <th className="px-8 py-5 text-left text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
                       Status
+                    </th>
+                    <th className="px-8 py-5 text-right text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
+                      Action
                     </th>
                   </tr>
                 </thead>
@@ -105,6 +154,11 @@ export default function BranchesWorkspace({
                             </div>
                             <div className="min-w-0">
                               <p className="truncate text-base font-bold text-[#333235]">{b.name}</p>
+                              {b.isHeadBranch ? (
+                                <span className="mt-1 inline-flex rounded-full bg-[#F0EDEF] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#525155]">
+                                  Head Branch
+                                </span>
+                              ) : null}
                               <p className="truncate text-xs text-[#605E61]">
                                 Added {new Date(b.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                               </p>
@@ -118,16 +172,10 @@ export default function BranchesWorkspace({
                           </div>
                         </td>
                         <td className="px-8 py-6 align-middle">
-                          {b.isHeadBranch ? (
-                            <span className="inline-flex rounded-full bg-[#F0EDEF] px-3 py-1 text-xs font-bold text-[#525155]">
-                              Head branch
-                            </span>
-                          ) : (
-                            <span className="text-sm text-[#605E61]">Location</span>
-                          )}
-                        </td>
-                        <td className="px-8 py-6 align-middle text-sm text-[#333235]">
-                          {b.branchAdminEmail ?? <span className="text-[#605E61]">—</span>}
+                          <div className="text-sm text-[#333235]">
+                            <p className="font-semibold text-[#333235]">{adminNameFromEmail(b.branchAdminEmail)}</p>
+                            <p className="mt-1 text-xs text-[#605E61]">{b.branchAdminEmail ?? '—'}</p>
+                          </div>
                         </td>
                         <td className="px-8 py-6 align-middle">
                           <span
@@ -136,8 +184,30 @@ export default function BranchesWorkspace({
                               b.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-800' : 'bg-zinc-100 text-zinc-700',
                             )}
                           >
-                            {b.status}
+                            {b.status === 'ACTIVE' ? 'APPROVED' : b.status}
                           </span>
+                        </td>
+                        <td className="px-8 py-6 align-middle text-right">
+                          <div className="flex flex-wrap items-center justify-end gap-2">
+                            <Link
+                              href={`/branches/${b.id}`}
+                              className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50"
+                            >
+                              View
+                            </Link>
+                            <Link
+                              href={canEdit ? `/branches/${b.id}/edit` : '#'}
+                              aria-disabled={!canEdit}
+                              className={
+                                canEdit
+                                  ? 'inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50'
+                                  : 'pointer-events-none inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-400 ring-1 ring-black/5 opacity-60'
+                              }
+                            >
+                              <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden />
+                              Edit
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -149,85 +219,40 @@ export default function BranchesWorkspace({
         )}
       </div>
 
-      {data?.viewerRole === 'MERCHANT_ADMIN' ? (
-        <div className="overflow-hidden rounded-[24px] border border-[#B3B1B4]/10 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
-          <div className="border-b border-[#B3B1B4]/10 px-6 py-5 sm:px-8">
-            <h2 className="font-headline text-lg font-bold text-[#333235]">Branch requests</h2>
-            <p className="mt-1 text-sm text-[#605E61]">
-              Track submissions to add a location. The proposed branch admin can sign in only after approval.
-            </p>
-          </div>
-          {requestsLoadFailed ? (
-            <div className="px-6 py-8 text-sm text-red-600 sm:px-8">Unable to load branch requests.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse">
-                <thead>
-                  <tr className="border-b border-[#B3B1B4]/10 bg-[#F6F3F4]/50">
-                    <th className="px-8 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
-                      Branch
-                    </th>
-                    <th className="px-8 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
-                      Admin
-                    </th>
-                    <th className="px-8 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
-                      Submitted
-                    </th>
-                    <th className="px-8 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-[#605E61]">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {branchRequests.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-8 py-10 text-center text-sm text-[#605E61]">
-                        No branch requests yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    branchRequests.map((r, idx) => (
-                      <tr key={r.id} className={idx > 0 ? 'border-t border-[#B3B1B4]/10' : ''}>
-                        <td className="px-8 py-5 align-middle">
-                          <p className="font-semibold text-[#333235]">{r.branchName}</p>
-                          {r.status === 'REJECTED' && r.rejectionReason ? (
-                            <p className="mt-1 text-xs text-red-700">{r.rejectionReason}</p>
-                          ) : null}
-                        </td>
-                        <td className="px-8 py-5 align-middle text-sm text-[#333235]">
-                          <p>{r.adminName}</p>
-                          <p className="text-xs text-[#605E61]">{r.adminEmail}</p>
-                        </td>
-                        <td className="px-8 py-5 align-middle text-sm text-[#605E61]">
-                          {new Date(r.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                        </td>
-                        <td className="px-8 py-5 align-middle">
-                          <span
-                            className={cn(
-                              'inline-flex rounded-full px-3 py-1 text-xs font-semibold',
-                              requestStatusClass(r.status),
-                            )}
-                          >
-                            {r.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+      <div className="rounded-[24px] border border-[#B3B1B4]/10 bg-white px-6 py-5 shadow-[0_1px_2px_rgba(0,0,0,0.06)] sm:px-8">
+        <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-[#605E61]">
+            Showing <span className="text-[#333235]">{from}–{to}</span> of <span className="text-[#333235]">{data?.total ?? 0}</span>
+          </p>
+          <nav className="flex flex-wrap items-center justify-center gap-2 sm:justify-end" aria-label="Pagination">
+            <Link
+              href={page > 1 ? buildUrl(q, status, page - 1) : '#'}
+              aria-disabled={page <= 1}
+              className={
+                page > 1
+                  ? 'rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50'
+                  : 'pointer-events-none rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-400 ring-1 ring-black/5 opacity-60'
+              }
+            >
+              Prev
+            </Link>
+            <span className="text-sm font-semibold text-zinc-700">
+              Page {page} of {totalPages}
+            </span>
+            <Link
+              href={page < totalPages ? buildUrl(q, status, page + 1) : '#'}
+              aria-disabled={page >= totalPages}
+              className={
+                page < totalPages
+                  ? 'rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 ring-1 ring-black/5 hover:bg-zinc-50'
+                  : 'pointer-events-none rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-400 ring-1 ring-black/5 opacity-60'
+              }
+            >
+              Next
+            </Link>
+          </nav>
         </div>
-      ) : null}
-
-      {data?.viewerRole === 'MERCHANT_ADMIN' ? <BranchRequestForm /> : null}
-      {data?.viewerRole === 'BRANCH_ADMIN' ? (
-        <p className="rounded-[24px] border border-[#B3B1B4]/10 bg-white px-6 py-5 text-sm text-[#605E61] shadow-sm">
-          Branch administrators cannot add new branches. Contact your merchant administrator if you need another
-          location.
-        </p>
-      ) : null}
+      </div>
     </div>
   );
 }

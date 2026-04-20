@@ -16,6 +16,7 @@ import {
   rejectMerchantApplication,
   updateMerchantApplication,
 } from '../../../controllers/v1/platform/merchantApplications/platformMerchantApplications.controller.js';
+import { getBranch, listBranches } from '../../../controllers/v1/platform/branches/platformBranches.controller.js';
 import { deleteMerchant, getMerchant, listMerchants, updateMerchant } from '../../../controllers/v1/platform/merchants/platformMerchants.controller.js';
 import {
   createRole,
@@ -91,6 +92,18 @@ export function registerPlatformRoutes(app: Express): void {
     adminAuthMiddleware,
     requireAdminPermission(AdminPermissions.MERCHANTS_LIST),
     asyncHandler(listMerchants),
+  );
+  app.get(
+    '/v1/platform/branches',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_LIST),
+    asyncHandler(listBranches),
+  );
+  app.get(
+    '/v1/platform/branches/:branchId',
+    adminAuthMiddleware,
+    requireAdminPermission(AdminPermissions.MERCHANTS_VIEW),
+    asyncHandler(getBranch),
   );
   app.get(
     '/v1/platform/merchants/:merchantId',

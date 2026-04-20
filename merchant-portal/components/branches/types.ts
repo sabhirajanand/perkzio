@@ -12,6 +12,9 @@ export interface BranchRow {
 export interface BranchesListDto {
   ok: true;
   viewerRole: string;
+  total: number;
+  limit: number;
+  offset: number;
   branches: BranchRow[];
 }
 

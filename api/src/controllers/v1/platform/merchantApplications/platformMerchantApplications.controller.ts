@@ -11,6 +11,12 @@ import { sendEmail } from '../../../../lib/notifications/email.js';
 
 const listSchema = z.object({
   status: z.string().optional(),
+  q: z.string().trim().min(1).optional(),
+  planCode: z.string().trim().min(1).optional(),
+  createdFrom: z.string().trim().min(1).optional(),
+  createdTo: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 const updateSchema = z.object({
@@ -27,11 +33,18 @@ const updateSchema = z.object({
   pinCode: z.string().min(1).optional(),
   mapsUrl: z.string().min(1).optional(),
   plan: z.enum(['LITE', 'GROWTH', 'PRO']).optional(),
+  billingCycle: z.string().min(1).optional(),
   outletsCount: z.number().int().min(1).max(200).optional(),
   website: z.string().optional(),
   instagram: z.string().optional(),
   facebook: z.string().optional(),
   googleBusinessUrl: z.string().optional(),
+  logoUrl: z.string().optional(),
+  logoFileName: z.string().optional(),
+  insideViewUrl: z.string().optional(),
+  insideViewFileName: z.string().optional(),
+  outsideViewUrl: z.string().optional(),
+  outsideViewFileName: z.string().optional(),
 });
 
 function pickSummary(app: MerchantOnboardingApplication) {
@@ -112,8 +125,31 @@ export async function listMerchantApplications(req: Request, res: Response): Pro
   const qb = repo.createQueryBuilder('a').orderBy('a.createdAt', 'DESC');
   if (parsed.data.status) qb.where('a.status = :status', { status: parsed.data.status });
 
-  const rows = await qb.take(50).getMany();
-  res.json({ ok: true, applications: rows.map(pickSummary) });
+  if (parsed.data.q) {
+    qb.andWhere(
+      "(a.referenceNumber ILIKE :q OR (a.businessPayload->>'businessName') ILIKE :q OR (a.businessPayload->>'contactEmail') ILIKE :q OR (a.businessPayload->>'contactPhone') ILIKE :q)",
+      { q: `%${parsed.data.q}%` },
+    );
+  }
+  if (parsed.data.planCode) {
+    qb.andWhere("(a.businessPayload->>'plan') = :plan", { plan: parsed.data.planCode });
+  }
+  if (parsed.data.createdFrom) {
+    const from = new Date(parsed.data.createdFrom);
+    if (!Number.isNaN(from.getTime())) qb.andWhere('a.createdAt >= :createdFrom', { createdFrom: from.toISOString() });
+  }
+  if (parsed.data.createdTo) {
+    const to = new Date(parsed.data.createdTo);
+    if (!Number.isNaN(to.getTime())) {
+      const endExclusive = new Date(to);
+      endExclusive.setDate(endExclusive.getDate() + 1);
+      qb.andWhere('a.createdAt < :createdTo', { createdTo: endExclusive.toISOString() });
+    }
+  }
+
+  const total = await qb.clone().orderBy().getCount();
+  const rows = await qb.take(parsed.data.limit).skip(parsed.data.offset).getMany();
+  res.json({ ok: true, total, limit: parsed.data.limit, offset: parsed.data.offset, applications: rows.map(pickSummary) });
 }
 
 export async function getMerchantApplication(req: Request, res: Response): Promise<void> {
@@ -149,7 +185,8 @@ export async function updateMerchantApplication(req: Request, res: Response): Pr
   const repo = ds.getRepository(MerchantOnboardingApplication);
   const application = await repo.findOne({ where: { id: applicationId } });
   if (!application) throw new AppError(404, ErrorCodes.NOT_FOUND, 'Application not found');
-  if (application.status !== 'SUBMITTED' && application.status !== 'PAYMENT_PENDING') {
+  const isSuperAdmin = req.auth?.userType === 'SUPERADMIN';
+  if (!isSuperAdmin && application.status !== 'SUBMITTED' && application.status !== 'PAYMENT_PENDING') {
     throw new AppError(409, ErrorCodes.CONFLICT, 'Only pending applications can be edited');
   }
 

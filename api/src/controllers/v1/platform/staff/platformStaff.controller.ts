@@ -24,10 +24,32 @@ const updateStaffSchema = z.object({
 });
 
 export async function listStaff(_req: Request, res: Response): Promise<void> {
-  const staff = await getDataSource()
-    .getRepository(PlatformStaff)
-    .find({ order: { createdAt: 'DESC' } });
-  res.status(200).json({ staff });
+  const repo = getDataSource().getRepository(PlatformStaff);
+  const rows = await repo
+    .createQueryBuilder('s')
+    .select('s.id', 'id')
+    .addSelect('s.email', 'email')
+    .addSelect('s.fullName', 'fullName')
+    .addSelect('s.status', 'status')
+    .addSelect('s.createdAt', 'createdAt')
+    .orderBy('s.createdAt', 'DESC')
+    .getRawMany<{
+      id: string;
+      email: string;
+      fullName: string | null;
+      status: string;
+      createdAt: string;
+    }>();
+
+  res.status(200).json({
+    staff: rows.map((s) => ({
+      id: s.id,
+      email: s.email,
+      fullName: s.fullName ?? null,
+      status: s.status,
+      createdAt: s.createdAt,
+    })),
+  });
 }
 
 export async function getStaff(req: Request, res: Response): Promise<void> {

@@ -12,6 +12,7 @@ import { signAdminAccessToken } from '../../../../lib/auth/adminTokens.js';
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
+  rememberMe: z.boolean().optional(),
 });
 
 export async function adminLogin(req: Request, res: Response): Promise<void> {
@@ -36,6 +37,7 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
   const token = signAdminAccessToken({
     env,
     claims: { sub: staff.id, userType: staffType },
+    ttlSeconds: parsed.data.rememberMe ? 60 * 60 * 24 * 7 : 60 * 60 * 8,
   });
 
   res.status(200).json({
